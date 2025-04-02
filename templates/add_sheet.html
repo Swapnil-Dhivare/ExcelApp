@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Sheet{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Add New Sheet</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_sheet') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Sheet Name</label>
+                        <input type="text" class="form-control" name="sheet_name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Use Template</label>
+                        <select class="form-select" id="templateSelect" name="template_id">
+                            <option value="">-- Select Template --</option>
+                            {% for template in built_in_templates + custom_templates %}
+                                <option value="{{ template.id }}">{{ template.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Headers (comma separated)</label>
+                        <input type="text" class="form-control" id="headersInput" name="headers" placeholder="Column1,Column2,Column3">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Data</label>
+                        <textarea class="form-control" id="dataInput" name="data" rows="8" placeholder="Enter tab-separated values&#10;Row1Col1&#9;Row1Col2&#10;Row2Col1&#9;Row2Col2"></textarea>
+                        <small class="text-muted">Use tabs between columns, new lines for rows</small>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Formatting Options</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Header Font Size</label>
+                                    <input type="number" class="form-control" name="title_font_size" value="14" min="8" max="36">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Cell Font Size</label>
+                                    <input type="number" class="form-control" name="cell_font_size" value="11" min="8" max="36">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Header Color</label>
+                                    <input type="color" class="form-control form-control-color" name="header_bg_color" value="#4F81BD">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Alignment</label>
+                                    <select class="form-select" name="cell_alignment">
+                                        <option value="left">Left</option>
+                                        <option value="center" selected>Center</option>
+                                        <option value="right">Right</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="title_bold" checked>
+                                        <label class="form-check-label">Bold Headers</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="text_wrap">
+                                        <label class="form-check-label">Wrap Text</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Add Sheet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Template selection handler
+        document.getElementById('templateSelect').addEventListener('change', function() {
+            const templateId = this.value;
+            if (!templateId) return;
+            
+            const templates = {{ (built_in_templates + custom_templates)|tojson }};
+            const template = templates.find(t => t.id === templateId);
+            
+            if (template) {
+                document.querySelector('input[name="sheet_name"]').value = template.default_sheet_name || '';
+                document.getElementById('headersInput').value = template.headers.join(', ');
+                
+                // Format sample data as tab-delimited rows
+                const sampleData = template.sample_data.map(row => row.join('\t')).join('\n');
+                document.getElementById('dataInput').value = sampleData;
+            }
+        });
+    });
+</script>
+{% endblock %}
