@@ -298,14 +298,23 @@ def download_excel():
             for sheet_name in sheet_order:
                 sheet = next((s for s in sheets_data if s['sheet_name'] == sheet_name), None)
                 if not sheet:
+                    app.logger.error(f"Sheet not found: {sheet_name}")
                     continue
                 
-                df = pd.DataFrame(sheet['data'], columns=sheet['headers']) if sheet['headers'] else pd.DataFrame(sheet['data'])
-                df.to_excel(writer, sheet_name=sheet['sheet_name'], index=False)
-                worksheet = writer.sheets[sheet['sheet_name']]
-                fmt = sheet.get("formatting", {})
+                # Ensure headers and data are valid
+                headers = sheet.get('headers', [])
+                data = sheet.get('data', [])
+                if not headers or not isinstance(data, list):
+                    app.logger.error(f"Invalid headers or data for sheet: {sheet_name}")
+                    continue
+                
+                # Create DataFrame
+                df = pd.DataFrame(data, columns=headers) if headers else pd.DataFrame(data)
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+                worksheet = writer.sheets[sheet_name]
                 
                 # Apply formatting
+                fmt = sheet.get("formatting", {})
                 header_format = workbook.add_format({
                     'bold': fmt.get("title_bold", False),
                     'font_size': fmt.get("title_font_size", 12),
@@ -327,13 +336,14 @@ def download_excel():
                     'num_format': fmt.get("number_format", "General")
                 })
                 
-                # Write data
-                for col_num, header in enumerate(sheet['headers']):
+                # Write headers
+                for col_num, header in enumerate(headers):
                     worksheet.write(0, col_num, header, header_format)
                     worksheet.set_column(col_num, col_num, 20)
                 
-                for r, row in enumerate(sheet['data']):
-                    for c, val in enumerate(row[:len(sheet['headers'])] if sheet['headers'] else row):
+                # Write data
+                for r, row in enumerate(data):
+                    for c, val in enumerate(row[:len(headers)] if headers else row):
                         if isinstance(val, str) and val.startswith('='):
                             worksheet.write_formula(r + 1, c, val, cell_format)
                         else:
@@ -343,36 +353,48 @@ def download_excel():
                 if fmt.get("merge_cells"):
                     for merge_range in fmt["merge_cells"].split(';'):
                         if merge_range.strip():
-                            worksheet.merge_range(merge_range.strip(), "", cell_format)
+                            try:
+                                worksheet.merge_range(merge_range.strip(), "", cell_format)
+                            except Exception as e:
+                                app.logger.error(f"Error merging cells in sheet {sheet_name}: {str(e)}")
                 
                 if fmt.get("freeze_panes"):
-                    worksheet.freeze_panes(fmt["freeze_panes"])
+                    try:
+                        worksheet.freeze_panes(fmt["freeze_panes"])
+                    except Exception as e:
+                        app.logger.error(f"Error freezing panes in sheet {sheet_name}: {str(e)}")
                 
                 if fmt.get("validation"):
                     for col_name, val in fmt["validation"].items():
-                        if col_name in sheet['headers'] and val['type'] == 'list':
-                            col_idx = sheet['headers'].index(col_name)
-                            worksheet.data_validation(
-                                1, col_idx, len(sheet['data']), col_idx,
-                                {
-                                    'validate': 'list',
-                                    'source': val['options'],
-                                    'input_title': 'Select:',
-                                    'input_message': 'Choose from dropdown'
-                                }
-                            )
+                        if col_name in headers and val['type'] == 'list':
+                            col_idx = headers.index(col_name)
+                            try:
+                                worksheet.data_validation(
+                                    1, col_idx, len(data), col_idx,
+                                    {
+                                        'validate': 'list',
+                                        'source': val['options'],
+                                        'input_title': 'Select:',
+                                        'input_message': 'Choose from dropdown'
+                                    }
+                                )
+                            except Exception as e:
+                                app.logger.error(f"Error adding validation in sheet {sheet_name}: {str(e)}")
                 
                 if fmt.get("conditional_formatting"):
                     for range_, rules in fmt["conditional_formatting"].items():
                         if rules['type'] == 'data_bar':
-                            worksheet.conditional_format(range_, {
-                                'type': 'data_bar',
-                                'bar_color': rules.get('bar_color', '#63C384'),
-                                'min_type': rules.get('min_type', 'num'),
-                                'min_value': rules.get('min_value', 0),
-                                'max_type': rules.get('max_type', 'num'),
-                                'max_value': rules.get('max_value', 100)
-                            })
+                            try:
+                                worksheet.conditional_format(range_, {
+                                    'type': 'data_bar',
+                                    'bar_color': rules.get('bar_color', '#63C384'),
+                                    'min_type': rules.get('min_type', 'num'),
+                                    'min_value': rules.get('min_value', 0),
+                                    'max_type': rules.get('max_type', 'num'),
+                                    'max_value': rules.get('max_value', 100)
+                                })
+                            except Exception as e:
+                                app.logger.error(f"Error adding conditional formatting in sheet {sheet_name}: {str(e)}")
         
         output.seek(0)
         return send_file(
