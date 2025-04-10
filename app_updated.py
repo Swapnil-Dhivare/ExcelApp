@@ -185,11 +185,13 @@ def remove_sheet(sheet_name):
 @app.route('/reorder_sheets', methods=['POST'])
 def reorder_sheets():
     global sheet_order
-    new_order = request.json.get('order', [])
+    new_order = request.form.getlist('order[]')
     if new_order:
         sheet_order = new_order
-        return jsonify(success=True)
-    return jsonify(success=False), 400
+        flash('Sheet order updated successfully!', 'success')
+        return redirect(url_for('index'))
+    flash('Failed to update sheet order.', 'error')
+    return redirect(url_for('index'))
 
 @app.route('/add_custom_template', methods=['POST'])
 def add_custom_template():
@@ -257,32 +259,49 @@ def upload_file():
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        
         try:
-            xls = pd.ExcelFile(filepath)
-            for sheet_name in xls.sheet_names:
-                df = xls.parse(sheet_name)
-                sheets_data.append({
-                    "sheet_name": sheet_name,
-                    "headers": df.columns.tolist(),
-                    "data": df.values.tolist(),
-                    "formatting": {
-                        "header_bg_color": "#F0E68C",
-                        "cell_alignment": "left"
-                    }
-                })
-                sheet_order.append(sheet_name)
+            # Save the uploaded file
+            file.save(filepath)
+            app.logger.info(f"File saved at {filepath}")
+            
+            # Process the Excel file using a context manager
+            with pd.ExcelFile(filepath) as xls:
+                app.logger.info(f"Excel file loaded successfully: {xls.sheet_names}")
+                
+                for sheet_name in xls.sheet_names:
+                    df = xls.parse(sheet_name)
+                    if df.empty:
+                        app.logger.warning(f"Sheet {sheet_name} is empty. Skipping.")
+                        continue
+                    app.logger.info(f"Processing sheet: {sheet_name}")
+                    app.logger.info(f"Sheet {sheet_name} parsed successfully with {len(df)} rows.")
+                    
+                    # Add sheet data to global data store
+                    sheets_data.append({
+                        "sheet_name": sheet_name,
+                        "headers": df.columns.tolist(),
+                        "data": df.values.tolist(),
+                        "formatting": {
+                            "header_bg_color": "#F0E68C",
+                            "cell_alignment": "left"
+                        }
+                    })
+                    sheet_order.append(sheet_name)
             
             flash(f'Successfully imported {len(xls.sheet_names)} sheets from {filename}', 'success')
-            
+        
         except Exception as e:
             app.logger.error(f"Error processing file: {str(e)}")
-            flash('Error processing Excel file', 'error')
+            flash('Error processing Excel file. Please check the file format.', 'error')
         
         finally:
-            if os.path.exists(filepath):
-                os.remove(filepath)
+            # Clean up the uploaded file
+            try:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                    app.logger.info(f"Temporary file {filepath} deleted.")
+            except Exception as e:
+                app.logger.error(f"Error deleting file {filepath}: {str(e)}")
     else:
         flash('Allowed file types are .xlsx, .xls', 'error')
     
@@ -408,6 +427,53 @@ def download_excel():
         app.logger.error(f"Error generating Excel: {str(e)}")
         flash('Error generating Excel file', 'error')
         return redirect(url_for('index'))
+
+@app.route('/update_sheet_format/<sheet_name>', methods=['POST'])
+def update_sheet_format(sheet_name):
+    global sheets_data
+    sheet = next((s for s in sheets_data if s['sheet_name'] == sheet_name), None)
+    if not sheet:
+        flash(f'Sheet "{sheet_name}" not found.', 'error')
+        return redirect(url_for('index'))
+    
+    try:
+        # Update formatting
+        sheet['formatting']['header_bg_color'] = request.form.get('header_bg_color', sheet['formatting']['header_bg_color'])
+        sheet['formatting']['cell_alignment'] = request.form.get('cell_alignment', sheet['formatting']['cell_alignment'])
+        flash(f'Formatting updated for sheet "{sheet_name}".', 'success')
+    except Exception as e:
+        app.logger.error(f"Error updating format for sheet {sheet_name}: {str(e)}")
+        flash('Error updating sheet formatting.', 'error')
+    
+    return redirect(url_for('index'))
+
+@app.route('/update_sheet_data', methods=['POST'])
+def update_sheet_data():
+    global sheets_data
+    sheet_name = request.form.get('sheet_name')
+    sheet = next((s for s in sheets_data if s['sheet_name'] == sheet_name), None)
+    if not sheet:
+        flash(f'Sheet "{sheet_name}" not found.', 'error')
+        return redirect(url_for('index'))
+    
+    try:
+        # Update sheet data
+        new_data = []
+        for key, value in request.form.items():
+            if key.startswith('data['):
+                row, col = map(int, key[5:-1].split(']['))
+                while len(new_data) <= row:
+                    new_data.append([])
+                while len(new_data[row]) <= col:
+                    new_data[row].append('')
+                new_data[row][col] = value
+        sheet['data'] = new_data
+        flash(f'Sheet "{sheet_name}" updated successfully!', 'success')
+    except Exception as e:
+        app.logger.error(f"Error updating sheet data for {sheet_name}: {str(e)}")
+        flash('Error updating sheet data.', 'error')
+    
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):

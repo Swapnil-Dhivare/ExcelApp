@@ -19,20 +19,36 @@
                                     <h6 class="mb-1">{{ sheet.sheet_name }}</h6>
                                     <small class="text-muted">
                                         {{ sheet.headers|length }} columns, {{ sheet.data|length }} rows
-                                        {% if sheet.formatting %}
-                                            <span class="badge bg-info badge-format">Formatted</span>
-                                            {% if sheet.formatting.validation %}
-                                                <span class="badge bg-warning badge-format">Validation</span>
-                                            {% endif %}
-                                        {% endif %}
                                     </small>
                                 </div>
-                                <form method="POST" action="{{ url_for('remove_sheet', sheet_name=sheet.sheet_name) }}" class="mb-0">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
+                                <div>
+                                    <!-- Preview Button -->
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#previewModal" 
+                                            onclick="loadSheetPreview('{{ sheet.sheet_name }}')">
+                                        <i class="bi bi-eye"></i> Preview
                                     </button>
-                                </form>
+                                    <!-- Remove Button -->
+                                    <form method="POST" action="{{ url_for('remove_sheet', sheet_name=sheet.sheet_name) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
+                            <h3>Format Sheet: {{ sheet.sheet_name }}</h3>
+                            <form method="POST" action="{{ url_for('update_sheet_format', sheet_name=sheet.sheet_name) }}">
+                                <label for="header_bg_color">Header Background Color:</label>
+                                <input type="color" name="header_bg_color" value="{{ sheet.formatting.header_bg_color }}">
+                                
+                                <label for="cell_alignment">Cell Alignment:</label>
+                                <select name="cell_alignment">
+                                    <option value="left" {% if sheet.formatting.cell_alignment == 'left' %}selected{% endif %}>Left</option>
+                                    <option value="center" {% if sheet.formatting.cell_alignment == 'center' %}selected{% endif %}>Center</option>
+                                    <option value="right" {% if sheet.formatting.cell_alignment == 'right' %}selected{% endif %}>Right</option>
+                                </select>
+                                
+                                <button type="submit">Update Format</button>
+                            </form>
                         {% endfor %}
                     </div>
                 {% else %}
@@ -95,4 +111,124 @@
         </div>
     </div>
 </div>
+
+<h1>Uploaded Sheets</h1>
+
+{% if sheets %}
+    <div>
+        {% for sheet in sheets %}
+            <h2>{{ sheet.sheet_name }}</h2>
+            <table border="1">
+                <thead>
+                    <tr>
+                        {% for header in sheet.headers %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sheet.data %}
+                        <tr>
+                            {% for cell in row %}
+                                <td>{{ cell }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No sheets uploaded yet.</p>
+{% endif %}
+
+<h1>Reorder Sheets</h1>
+<form id="reorder-form" method="POST" action="{{ url_for('reorder_sheets') }}">
+    <ul id="sheet-order">
+        {% for sheet_name in sheet_order %}
+            <li>
+                <input type="hidden" name="order[]" value="{{ sheet_name }}">
+                {{ sheet_name }}
+            </li>
+        {% endfor %}
+    </ul>
+    <button type="submit">Save Order</button>
+</form>
+
+<script>
+    // Add drag-and-drop functionality for reordering sheets
+    const sheetOrder = document.getElementById('sheet-order');
+    new Sortable(sheetOrder, {
+        animation: 150,
+        onEnd: function () {
+            const inputs = sheetOrder.querySelectorAll('input[name="order[]"]');
+            inputs.forEach((input, index) => {
+                input.value = sheetOrder.children[index].textContent.trim();
+            });
+        }
+    });
+</script>
+
+<script>
+    function loadSheetPreview(sheetName) {
+        // Find the sheet data from the global `sheets` variable
+        const sheet = {{ sheets|tojson }}.find(s => s.sheet_name === sheetName);
+        if (!sheet) return;
+
+        // Set the sheet name in the hidden input
+        document.getElementById('editSheetName').value = sheet.sheet_name;
+
+        // Populate the table headers
+        const headersRow = document.getElementById('sheetPreviewHeaders');
+        headersRow.innerHTML = '';
+        sheet.headers.forEach(header => {
+            const th = document.createElement('th');
+            th.textContent = header;
+            headersRow.appendChild(th);
+        });
+
+        // Populate the table body
+        const body = document.getElementById('sheetPreviewBody');
+        body.innerHTML = '';
+        sheet.data.forEach((row, rowIndex) => {
+            const tr = document.createElement('tr');
+            row.forEach((cell, colIndex) => {
+                const td = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.name = `data[${rowIndex}][${colIndex}]`;
+                input.value = cell;
+                input.className = 'form-control';
+                td.appendChild(input);
+                tr.appendChild(td);
+            });
+            body.appendChild(tr);
+        });
+    }
+</script>
+
+<!-- Preview and Edit Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">Sheet Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editSheetForm" method="POST" action="{{ url_for('update_sheet_data') }}">
+                    <input type="hidden" name="sheet_name" id="editSheetName">
+                    <table class="table table-bordered" id="sheetPreviewTable">
+                        <thead>
+                            <tr id="sheetPreviewHeaders"></tr>
+                        </thead>
+                        <tbody id="sheetPreviewBody"></tbody>
+                    </table>
+                    <button type="submit" class="btn btn-success">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
