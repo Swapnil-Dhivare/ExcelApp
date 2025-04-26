@@ -13,6 +13,9 @@ import pandas as pd
 import base64
 import logging
 from dotenv import load_dotenv
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 db = SQLAlchemy()
 
@@ -90,6 +93,27 @@ def inject_templates():
         'built_in_templates': built_in_templates,
         'custom_templates': custom_templates
     }
+
+@app.template_filter('char')
+def to_char(value):
+    """Convert a number to a character (0->A, 1->B, etc.)"""
+    return chr(value)
+
+@app.template_filter('column_letter')
+def column_letter(num):
+    """Convert a number to Excel-style column letter (0=A, 1=B, etc.)"""
+    letters = ''
+    while num >= 0:
+        letters = chr(65 + (num % 26)) + letters
+        num = num // 26 - 1
+        if num < 0:
+            break
+    return letters
+
+@app.template_filter('enumerate')
+def _enumerate(sequence):
+    """Add enumerate function to Jinja templates"""
+    return enumerate(sequence)
 
 # Global data stores
 sheets_data = []
@@ -603,127 +627,369 @@ def upload_file():
         
     return redirect(url_for('index'))
 
+@app.route('/update_header_color', methods=['POST'])
+@login_required
+def update_header_color():
+    try:
+        data = request.get_json()
+        sheet_name = data.get('sheet_name')
+        header_indices = data.get('headers', [])
+        color = data.get('color')
+        
+        if not sheet_name or not header_indices or not color:
+            return jsonify({'success': False, 'error': 'Missing required data'})
+        
+        sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
+        if not sheet:
+            return jsonify({'success': False, 'error': 'Sheet not found'})
+        
+        # Parse the sheet data
+        sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+        
+        # Check if sheet_data is a dict with format_metadata
+        if isinstance(sheet_data, dict):
+            format_metadata = sheet_data.get('format_metadata', {})
+        else:
+            # Convert to the new format if it's just an array
+            format_metadata = {}
+            sheet_data = {
+                'data': sheet_data,
+                'format_metadata': format_metadata,
+                'dimensions': {}
+            }
+        
+        # Update color for each header
+        for col_index in header_indices:
+            cell_ref = f"{chr(65 + col_index)}1"  # A1, B1, etc.
+            
+            if cell_ref not in format_metadata:
+                format_metadata[cell_ref] = {}
+                
+            format_metadata[cell_ref]['bg_color'] = color
+        
+        # Update the sheet data
+        sheet_data['format_metadata'] = format_metadata
+        sheet.data = json.dumps(sheet_data)
+        
+        # Update modified timestamp
+        sheet.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"Error in update_header_color: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/merge_cells', methods=['POST'])
+@login_required
+def merge_cells():
+    try:
+        data = request.get_json()
+        sheet_name = data.get('sheet_name')
+        min_row = data.get('min_row')
+        max_row = data.get('max_row')
+        min_col = data.get('min_col')
+        max_col = data.get('max_col')
+        content = data.get('content', '')
+        
+        if not all([sheet_name is not None, min_row is not None, max_row is not None, 
+                  min_col is not None, max_col is not None]):
+            return jsonify({'success': False, 'error': 'Missing required data'})
+        
+        sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
+        if not sheet:
+            return jsonify({'success': False, 'error': 'Sheet not found'})
+        
+        # Parse the sheet data
+        sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+        
+        # Check if sheet_data is a dict with merged_cells
+        if isinstance(sheet_data, dict):
+            merged_cells = sheet_data.get('merged_cells', [])
+        else:
+            # Convert to the new format if it's just an array
+            merged_cells = []
+            sheet_data = {
+                'data': sheet_data,
+                'format_metadata': {},
+                'dimensions': {},
+                'merged_cells': merged_cells
+            }
+        
+        # Add new merged cell range
+        merged_cells.append({
+            'first_row': min_row,
+            'last_row': max_row,
+            'first_col': min_col,
+            'last_col': max_col,
+            'content': content
+        })
+        
+        # Update the sheet data
+        sheet_data['merged_cells'] = merged_cells
+        sheet.data = json.dumps(sheet_data)
+        
+        # Update modified timestamp
+        sheet.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"Error in merge_cells: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/remove_merge_cells', methods=['POST'])
+@login_required
+def remove_merge_cells():
+    try:
+        data = request.get_json()
+        sheet_name = data.get('sheet_name')
+        min_row = data.get('min_row')
+        max_row = data.get('max_row')
+        min_col = data.get('min_col')
+        max_col = data.get('max_col')
+        
+        if not all([sheet_name is not None, min_row is not None, max_row is not None, 
+                  min_col is not None, max_col is not None]):
+            return jsonify({'success': False, 'error': 'Missing required data'})
+        
+        sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
+        if not sheet:
+            return jsonify({'success': False, 'error': 'Sheet not found'})
+        
+        # Parse the sheet data
+        sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+        
+        # Check if sheet_data has merged cells
+        if isinstance(sheet_data, dict) and 'merged_cells' in sheet_data:
+            # Filter out the merge that matches these coordinates
+            merged_cells = sheet_data['merged_cells']
+            sheet_data['merged_cells'] = [
+                merge for merge in merged_cells
+                if not (merge['first_row'] == min_row and 
+                       merge['last_row'] == max_row and
+                       merge['first_col'] == min_col and
+                       merge['last_col'] == max_col)
+            ]
+            
+            # Save back to database
+            sheet.data = json.dumps(sheet_data)
+            sheet.updated_at = datetime.utcnow()
+            db.session.commit()
+            
+            return jsonify({'success': True})
+        
+        return jsonify({'success': False, 'error': 'No merged cells found in sheet data'})
+    
+    except Exception as e:
+        print(f"Error in remove_merge_cells: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/download_excel')
 @login_required
 def download_excel():
     try:
-        output = io.BytesIO()
-        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-        
-        # Define formats
-        header_format = workbook.add_format({
-            'bold': True,
-            'bg_color': '#D3D3D3',
-            'border': 1,
-            'align': 'center',
-            'valign': 'vcenter'
-        })
-        
-        data_format = workbook.add_format({
-            'border': 1,
-            'align': 'left',
-            'valign': 'vcenter'
-        })
-        
-        number_format = workbook.add_format({
-            'border': 1,
-            'align': 'right',
-            'valign': 'vcenter',
-            'num_format': '#,##0.00'  # Format for numbers
-        })
-        
-        # Get user's sheets from database
         user_sheets = Sheet.query.filter_by(user_id=current_user.id).all()
         
         if not user_sheets:
-            flash('No data available to download', 'error')
+            flash('No sheets found to download', 'warning')
             return redirect(url_for('index'))
-
-        # Process each sheet
+        
+        # Create workbook
+        workbook = Workbook()
+        # Remove default sheet
+        if 'Sheet' in workbook.sheetnames:
+            std = workbook['Sheet']
+            workbook.remove(std)
+        
+        # Track history for logging
+        sheet_data_for_history = []
+        
         for sheet in user_sheets:
-            worksheet = workbook.add_worksheet(sheet.sheet_name[:31])
+            worksheet = workbook.create_sheet(sheet.sheet_name[:31])
             
-            try:
-                # Parse JSON data
-                sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
-                
-                if not sheet_data or not isinstance(sheet_data, list):
-                    continue
-                
-                # Get headers and identify numeric columns
-                headers = sheet_data[0] if sheet_data else []
-                numeric_cols = []
-                formula_cols = []
-                
-                # Write headers and analyze data types
-                for col_idx, header in enumerate(headers):
-                    worksheet.write(0, col_idx, header, header_format)
-                    
-                    # Check if column contains numbers or formulas
-                    if len(sheet_data) > 1:
-                        sample_value = sheet_data[1][col_idx] if col_idx < len(sheet_data[1]) else None
-                        if isinstance(sample_value, (int, float)) or (isinstance(sample_value, str) and sample_value.replace('.', '').isdigit()):
-                            numeric_cols.append(col_idx)
-                        elif isinstance(sample_value, str) and sample_value.startswith('='):
-                            formula_cols.append(col_idx)
-                
-                # Write data rows
-                for row_idx, row_data in enumerate(sheet_data[1:], start=1):
-                    for col_idx, cell_value in enumerate(row_data):
-                        # Handle different cell types
-                        if col_idx in numeric_cols:
-                            try:
-                                # Convert to float if possible
-                                value = float(cell_value) if cell_value else 0
-                                worksheet.write_number(row_idx, col_idx, value, number_format)
-                            except (ValueError, TypeError):
-                                worksheet.write(row_idx, col_idx, cell_value, data_format)
-                        elif col_idx in formula_cols:
-                            if isinstance(cell_value, str) and cell_value.startswith('='):
-                                worksheet.write_formula(row_idx, col_idx, cell_value, number_format)
-                            else:
-                                worksheet.write(row_idx, col_idx, cell_value, data_format)
-                        else:
-                            worksheet.write(row_idx, col_idx, cell_value, data_format)
-                
-                # Auto-adjust column widths
-                for col_idx, _ in enumerate(headers):
-                    max_length = len(str(headers[col_idx]))
-                    for row_idx in range(1, len(sheet_data)):
-                        cell_value = str(sheet_data[row_idx][col_idx])
-                        max_length = max(max_length, len(cell_value))
-                    worksheet.set_column(col_idx, col_idx, max_length + 2)
+            # Parse JSON data, handling both array and object formats
+            raw_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+            
+            # Extract data and metadata
+            if isinstance(raw_data, dict):
+                data = raw_data.get('data', [])
+                format_metadata = raw_data.get('format_metadata', {})
+                dimensions = raw_data.get('dimensions', {})
+                merged_cells = raw_data.get('merged_cells', [])
+                header_colors = raw_data.get('header_colors', {})
+                column_formulas = raw_data.get('column_formulas', {})  # NEW
+            else:
+                data = raw_data
+                format_metadata = {}
+                dimensions = {}
+                merged_cells = []
+                header_colors = {}
+                column_formulas = {}  # NEW
+            
+            # Apply column widths
+            column_widths = dimensions.get('column_widths', {})
+            for col_idx_str, width in column_widths.items():
+                col_idx = int(col_idx_str)
+                # Convert from pixels to Excel units (approx)
+                excel_width = width / 7
+                worksheet.column_dimensions[get_column_letter(col_idx + 1)].width = excel_width
+            
+            # Apply row heights
+            row_heights = dimensions.get('row_heights', {})
+            for row_idx_str, height in row_heights.items():
+                row_idx = int(row_idx_str) + 1  # Excel rows are 1-based
+                # Convert from pixels to Excel units (approx)
+                excel_height = height * 0.75
+                worksheet.row_dimensions[row_idx].height = excel_height
+            
+            # Write data and preserve formulas
+            if data:
+                for i, row in enumerate(data):
+                    for j, cell_value in enumerate(row):
+                        # Excel is 1-indexed
+                        cell = worksheet.cell(row=i+1, column=j+1)
                         
-            except Exception as sheet_error:
-                app.logger.error(f"Error processing sheet {sheet.sheet_name}: {str(sheet_error)}")
-                continue
-        
-        workbook.close()
-        output.seek(0)
-        
-        # Save download history
-        history = DownloadHistory(
-            user_id=current_user.id,
-            filename=f'workbook_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
-            sheet_data=json.dumps([{
+                        # If it's a formula, set it as a formula
+                        if isinstance(cell_value, str) and cell_value.startswith('='):
+                            cell.value = cell_value
+                        else:
+                            cell.value = cell_value
+                        
+                        # Apply cell formatting
+                        cell_ref = f"{get_column_letter(j+1)}{i+1}"
+                        if cell_ref in format_metadata:
+                            apply_excel_format(cell, format_metadata[cell_ref])
+                        
+                        # Apply header colors for first row
+                        if i == 0 and str(j) in header_colors:
+                            if not cell.fill or cell.fill.start_color.type == 'theme':
+                                cell.fill = PatternFill(start_color=header_colors[str(j)].replace('#', ''), 
+                                                      end_color=header_colors[str(j)].replace('#', ''),
+                                                      fill_type="solid")
+            
+            # Apply merged cells
+            for merge_info in merged_cells:
+                # Excel is 1-indexed
+                first_row = merge_info['first_row'] + 1
+                last_row = merge_info['last_row'] + 1
+                first_col = merge_info['first_col'] + 1
+                last_col = merge_info['last_col'] + 1
+                
+                merge_range = f"{get_column_letter(first_col)}{first_row}:{get_column_letter(last_col)}{last_row}"
+                worksheet.merge_cells(merge_range)
+                
+                # Set the content in the top-left cell
+                worksheet.cell(row=first_row, column=first_col).value = merge_info.get('content', '')
+            
+            # Track sheet for history
+            sheet_data_for_history.append({
                 'sheet_name': sheet.sheet_name,
-                'data': sheet.data
-            } for sheet in user_sheets])
+                'row_count': len(data) if data else 0,
+                'col_count': len(data[0]) if data and data[0] else 0
+            })
+        
+        # Save to a temporary file
+        temp_file = os.path.join(app.config['UPLOAD_FOLDER'], 'temp_workbook.xlsx')
+        workbook.save(temp_file)
+        
+        # Log the download in history
+        history_entry = DownloadHistory(
+            user_id=current_user.id,
+            filename=f"excel_sheets_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            sheet_data=json.dumps(sheet_data_for_history)
         )
-        db.session.add(history)
+        db.session.add(history_entry)
         db.session.commit()
-
+        
         return send_file(
-            output,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            temp_file,
             as_attachment=True,
-            download_name=f'workbook_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+            download_name=f"excel_sheets_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-
+    
     except Exception as e:
-        app.logger.error(f"Download error: {str(e)}")
-        flash(f'Error generating Excel file: {str(e)}', 'error')
+        flash(f'Error generating Excel file: {str(e)}', 'danger')
         return redirect(url_for('index'))
+
+def apply_excel_format(cell, format_data):
+    # Font formatting
+    if any(key in format_data for key in ['font_name', 'font_size', 'font_bold', 'font_italic', 'font_underline', 'font_color']):
+        font_name = format_data.get('font_name', 'Calibri')
+        font_size = int(format_data.get('font_size', 11))
+        font_bold = format_data.get('font_bold') == 'on'
+        font_italic = format_data.get('font_italic') == 'on'
+        font_underline = format_data.get('font_underline') == 'on'
+        font_color = format_data.get('font_color', '000000')
+        
+        # Strip # from hex color if present
+        if font_color and font_color.startswith('#'):
+            font_color = font_color[1:]
+        
+        cell.font = Font(
+            name=font_name,
+            size=font_size,
+            bold=font_bold,
+            italic=font_italic,
+            underline='single' if font_underline else None,
+            color=font_color
+        )
+    
+    # Background color
+    if 'bg_color' in format_data:
+        bg_color = format_data['bg_color']
+        if bg_color and bg_color.startswith('#'):
+            bg_color = bg_color[1:]
+        
+        cell.fill = PatternFill(
+            start_color=bg_color,
+            end_color=bg_color,
+            fill_type="solid"
+        )
+    
+    # Alignment
+    if 'align' in format_data:
+        align = format_data['align']
+        horizontal = {
+            'left': 'left',
+            'center': 'center',
+            'right': 'right',
+        }.get(align, 'left')
+        
+        wrap_text = format_data.get('wrap_text') == 'on'
+        
+        cell.alignment = Alignment(
+            horizontal=horizontal,
+            vertical='center',
+            wrap_text=wrap_text
+        )
+    
+    # Borders
+    if 'border_style' in format_data and format_data['border_style'] != 'none':
+        border_style = format_data['border_style']
+        border_color = format_data.get('border_color', '000000')
+        
+        # Strip # from hex color if present
+        if border_color and border_color.startswith('#'):
+            border_color = border_color[1:]
+        
+        # Convert border style
+        excel_border_style = {
+            'thin': 'thin',
+            'medium': 'medium',
+            'thick': 'thick',
+            'dotted': 'dotted',
+            'dashed': 'dashed',
+            'double': 'double'
+        }.get(border_style, 'thin')
+        
+        side = Side(style=excel_border_style, color=border_color)
+        cell.border = Border(left=side, right=side, top=side, bottom=side)
 
 @app.route('/update_sheet_format/<sheet_name>', methods=['POST'])
 @login_required
@@ -841,6 +1107,258 @@ def add_to_templates(download_id):
 @login_required
 def profile():
     return render_template('profile.html', user=current_user)
+
+@app.route('/edit_sheet/<sheet_name>')
+@login_required
+def edit_sheet(sheet_name):
+    sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
+    if not sheet:
+        flash(f'Sheet "{sheet_name}" not found.', 'error')
+        return redirect(url_for('index'))
+    
+    try:
+        # Parse JSON data with improved error handling
+        try:
+            if isinstance(sheet.data, str):
+                raw_data = json.loads(sheet.data)
+            else:
+                raw_data = sheet.data
+        except json.JSONDecodeError:
+            app.logger.error(f"Error decoding JSON data for sheet {sheet_name}")
+            raw_data = []
+        
+        # Extract data and metadata based on structure
+        if isinstance(raw_data, dict):
+            data = raw_data.get('data', [])
+            format_metadata = raw_data.get('format_metadata', {})
+            dimensions = raw_data.get('dimensions', {})
+        else:
+            # If it's just an array, use it directly
+            data = raw_data
+            format_metadata = {}
+            dimensions = {}
+        
+        # Ensure we have valid data
+        if not isinstance(data, list) or len(data) == 0:
+            data = [["Empty Sheet"]]
+        
+        # Add debug logging
+        app.logger.debug(f"Sheet {sheet_name} data: {data[:2]}")
+        
+        # Pass the entire raw data to the template for merged cells handling
+        return render_template('edit_sheet.html', 
+                          sheet=sheet, 
+                          data=data,
+                          format_metadata=format_metadata,
+                          dimensions=dimensions,
+                          raw_sheet_data=raw_data)
+                          
+    except Exception as e:
+        app.logger.error(f"Error editing sheet: {str(e)}")
+        flash(f'Error loading sheet: {str(e)}', 'error')
+        return redirect(url_for('index'))
+
+@app.route('/save_sheet_data', methods=['POST'])
+@login_required
+def save_sheet_data():
+    data = request.get_json()
+    sheet_name = data.get('sheet_name')
+    sheet_data = data.get('data')
+    dimensions = data.get('dimensions', {})
+    merged_cells = data.get('merged_cells', [])
+    header_colors = data.get('header_colors', {})
+    column_formulas = data.get('column_formulas', {})  # NEW
+    
+    app.logger.debug(f"Attempting to save sheet: {sheet_name}")
+    
+    if not sheet_name:
+        app.logger.error("No sheet name provided")
+        return jsonify({'success': False, 'error': 'Sheet name not provided'})
+        
+    # Get the sheet
+    sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
+    
+    if not sheet:
+        app.logger.error(f"Sheet '{sheet_name}' not found for user {current_user.id}")
+        return jsonify({'success': False, 'error': 'Sheet not found'})
+    
+    try:
+        # Parse existing data to preserve format metadata
+        existing_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+        
+        # Update with new data while preserving metadata
+        structured_data = {}
+        
+        # If existing data is already structured, preserve format metadata
+        if isinstance(existing_data, dict):
+            structured_data = existing_data
+            structured_data['data'] = sheet_data
+            
+            # Update dimensions if provided
+            if dimensions:
+                if 'dimensions' not in structured_data:
+                    structured_data['dimensions'] = {}
+                
+                if 'column_widths' in dimensions:
+                    structured_data['dimensions']['column_widths'] = dimensions['column_widths']
+                    
+                if 'row_heights' in dimensions:
+                    structured_data['dimensions']['row_heights'] = dimensions['row_heights']
+                    
+            # Update merged cells
+            if merged_cells:
+                structured_data['merged_cells'] = merged_cells
+                
+            # Update header colors
+            if header_colors:
+                structured_data['header_colors'] = header_colors
+                
+            # Update column formulas (NEW)
+            if column_formulas:
+                structured_data['column_formulas'] = column_formulas
+                
+        else:
+            # If existing data is just an array, create structured format
+            structured_data = {
+                'data': sheet_data,
+                'format_metadata': {},
+                'dimensions': dimensions,
+                'merged_cells': merged_cells,
+                'header_colors': header_colors,
+                'column_formulas': column_formulas  # NEW
+            }
+        
+        # Save back to database
+        sheet.data = json.dumps(structured_data)
+        sheet.updated_at = datetime.utcnow()  # Update timestamp
+        db.session.commit()
+        
+        app.logger.info(f"Sheet '{sheet_name}' saved successfully")
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        app.logger.error(f"Error saving sheet data: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/sheet_preview/<sheet_name>')
+@login_required
+def sheet_preview(sheet_name):
+    try:
+        sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
+        if not sheet:
+            return jsonify({'success': False, 'error': 'Sheet not found'})
+            
+        # Parse JSON data
+        sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+        
+        # Extract actual data array if needed
+        if isinstance(sheet_data, dict) and 'data' in sheet_data:
+            sheet_data = sheet_data['data']
+            
+        return jsonify({'success': True, 'data': sheet_data})
+        
+    except Exception as e:
+        app.logger.error(f"Error loading sheet preview: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/update_sheet_dimensions', methods=['POST'])
+@login_required
+def update_sheet_dimensions():
+    data = request.get_json()
+    sheet_name = data.get('sheet_name')
+    column_widths = data.get('column_widths', {})
+    row_heights = data.get('row_heights', {})
+    
+    # Validate input
+    if not sheet_name:
+        return jsonify({'success': False, 'error': 'Sheet name not provided'})
+    
+    # Get the sheet
+    sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
+    if not sheet:
+        return jsonify({'success': False, 'error': 'Sheet not found'})
+    
+    try:
+        # Parse existing data
+        sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+        
+        # Convert plain array to structured format if needed
+        if isinstance(sheet_data, list):
+            sheet_data = {'data': sheet_data}
+        
+        # Update or create dimensions property
+        if 'dimensions' not in sheet_data:
+            sheet_data['dimensions'] = {}
+        
+        if column_widths:
+            sheet_data['dimensions']['column_widths'] = column_widths
+        
+        if row_heights:
+            sheet_data['dimensions']['row_heights'] = row_heights
+        
+        # Save back to database
+        sheet.data = json.dumps(sheet_data)
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        app.logger.error(f"Error updating dimensions: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/save_cell_format', methods=['POST'])
+@login_required
+def save_cell_format():
+    try:
+        data = request.get_json()
+        sheet_name = data.get('sheet_name')
+        cell_ref = data.get('cell_ref')
+        format_data = data.get('format_data')
+        
+        if not sheet_name or not cell_ref or not format_data:
+            return jsonify({'success': False, 'error': 'Missing required data'})
+        
+        sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
+        if not sheet:
+            return jsonify({'success': False, 'error': 'Sheet not found'})
+        
+        # Parse the sheet data
+        sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+        
+        # Check if sheet_data is a dict with format_metadata
+        if isinstance(sheet_data, dict):
+            format_metadata = sheet_data.get('format_metadata', {})
+        else:
+            # Convert to the new format if it's just an array
+            format_metadata = {}
+            sheet_data = {
+                'data': sheet_data,
+                'format_metadata': format_metadata,
+                'dimensions': {},
+                'merged_cells': []
+            }
+        
+        # Update or create format data for the cell
+        if cell_ref not in format_metadata:
+            format_metadata[cell_ref] = {}
+        
+        # Update format data
+        for key, value in format_data.items():
+            format_metadata[cell_ref][key] = value
+        
+        # Save back to sheet data
+        sheet_data['format_metadata'] = format_metadata
+        sheet.data = json.dumps(sheet_data)
+        
+        # Update modified timestamp
+        sheet.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({'success': True})
+    
+    except Exception as e:
+        print(f"Error in save_cell_format: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     # init_db()  # Only use this for initial setup or debugging!

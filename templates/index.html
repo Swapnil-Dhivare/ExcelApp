@@ -57,11 +57,13 @@
                                         <small class="sheet-meta">Created: {{ sheet.created_at.strftime('%Y-%m-%d') }}</small>
                                     </div>
                                     <div class="btn-group">
-                                        <button class="btn btn-outline-primary btn-action" 
-                                                onclick="loadSheetPreview('{{ sheet.sheet_name }}')">
+                                        <a href="{{ url_for('edit_sheet', sheet_name=sheet.sheet_name) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="loadSheetPreview('{{ sheet.sheet_name }}')">
                                             <i class="bi bi-eye"></i> Preview
                                         </button>
-                                        <button class="btn btn-outline-danger btn-action">
+                                        <button class="btn btn-sm btn-outline-danger" onclick="removeSheet('{{ sheet.sheet_name }}')">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>

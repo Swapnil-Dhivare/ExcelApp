@@ -321,3 +321,70 @@ pre {
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+
+/* Sheet Editor Styling */
+.sheet-table {
+    table-layout: fixed;
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+
+.sheet-cell, .sheet-header {
+    padding: 0;
+    position: relative;
+}
+
+.editable-cell {
+    min-height: 28px;
+    padding: 4px 8px;
+    outline: none;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.sheet-cell.selected {
+    outline: 2px solid #4F81BD;
+    z-index: 2;
+}
+
+.sheet-cell.formula-cell {
+    background-color: #e2e3e5;
+    font-family: monospace;
+}
+
+.sheet-header .editable-cell {
+    font-weight: bold;
+    background-color: #F0E68C; /* Default yellow */
+    text-align: center;
+}
+
+/* Formatting panel */
+.formatting-panel {
+    display: none;
+    position: sticky;
+    top: 1rem;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.formatting-panel.visible {
+    display: block;
+}
+
+/* Merged Cell Styling */
+.merged-cell {
+    position: relative;
+    box-shadow: 0 0 0 1px #1a73e8;
+}
+
+.merged-cell .editable-cell {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}

@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Sheet - {{ sheet.sheet_name }}{% endblock %}
+
+{% block head %}
+<style>
+    /* Excel-like styling */
+    .excel-container {
+        position: relative;
+        height: calc(100vh - 200px);
+        overflow: auto;
+        border: 1px solid #ccc;
+        background: #f8f9fa;
+    }
+    
+    /* Column headers row */
+    .excel-column-headers {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: #e9ecef;
+        display: flex;
+        height: 25px;
+        margin-left: 40px; /* Space for row headers */
+    }
+    
+    .excel-column-header {
+        flex: 0 0 80px;
+        border: 1px solid #ddd;
+        border-left: none;
+        text-align: center;
+        font-weight: 500;
+        background: #e9ecef;
+        user-select: none;
+        cursor: col-resize;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+    
+    /* Row headers column */
+    .excel-row-headers {
+        position: sticky;
+        left: 0;
+        z-index: 15;
+        display: flex;
+        flex-direction: column;
+        width: 40px;
+    }
+    
+    .excel-row-header {
+        flex: 0 0 25px;
+        border: 1px solid #ddd;
+        border-top: none;
+        text-align: center;
+        background: #e9ecef;
+        user-select: none;
+        cursor: row-resize;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* Sheet table */
+    .sheet-table {
+        border-collapse: collapse;
+        table-layout: fixed;
+        width: 100%;
+    }
+    
+    .sheet-header {
+        height: 25px;
+        min-width: 80px;
+        max-width: 200px;
+        padding: 0;
+        position: sticky;
+        top: 0;
+        background-color: #E9ECEF;
+        z-index: 10;
+        font-weight: bold;
+    }
+    
+    .sheet-cell {
+        padding: 0;
+        position: relative;
+        height: 25px;
+        min-width: 80px;
+    }
+    
+    .sheet-cell.selected, .sheet-header.selected {
+        outline: 2px solid #1a73e8;
+        position: relative;
+        z-index: 5;
+    }
+    
+    .editable-cell {
+        min-height: 25px;
+        height: 100%;
+        width: 100%;
+        padding: 2px 4px;
+        outline: none;
+        overflow: hidden;
+        white-space: pre-wrap;
+        word-break: break-word;
+        border: none;
+    }
+    
+    .sheet-cell.formula-cell .editable-cell {
+        background-color: #e8f0fe;
+        font-family: monospace;
+    }
+    
+    /* Style for merged cells */
+    .merged-cell {
+        position: relative;
+        box-shadow: 0 0 0 1px #1a73e8;
+    }
+
+    .merged-cell .editable-cell {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+    }
+    
+    /* Formatting panel */
+    .formatting-panel {
+        position: sticky;
+        top: 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-radius: 4px;
+        overflow: hidden;
+        display: none;
+    }
+    
+    .formatting-panel.visible {
+        display: block;
+    }
+    
+    .format-toolbar {
+        background: #f1f3f4;
+        padding: 8px;
+        border-bottom: 1px solid #dadce0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .format-group {
+        margin-right: 16px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .format-separator {
+        height: 20px;
+        width: 1px;
+        background: #dadce0;
+        margin: 0 8px;
+    }
+    
+    /* Resize handles */
+    .col-resize-handle {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 4px;
+        height: 100%;
+        cursor: col-resize;
+        z-index: 25;
+    }
+    
+    .row-resize-handle {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 4px;
+        width: 100%;
+        cursor: row-resize;
+        z-index: 25;
+    }
+    
+    /* Context menu */
+    .excel-context-menu {
+        position: absolute;
+        z-index: 1000;
+        background: white;
+        border: 1px solid #ccc;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        border-radius: 4px;
+        padding: 5px 0;
+        min-width: 150px;
+    }
+    
+    .excel-context-menu-item {
+        padding: 6px 15px;
+        cursor: pointer;
+    }
+    
+    .excel-context-menu-item:hover {
+        background: #f1f3f4;
+    }
+    
+    .excel-context-menu-separator {
+        height: 1px;
+        background: #ddd;
+        margin: 5px 0;
+    }
+    
+    .excel-toast {
+        transition: all 0.3s ease;
+    }
+    
+    .excel-context-menu {
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    /* Active state for formatting buttons */
+    .btn-active {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+        box-shadow: inset 0 3px 5px rgba(0,0,0,0.125);
+    }
+    
+    /* Make sure contenteditable cells maintain formatting */
+    [contenteditable="true"] {
+        white-space: pre-wrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div id="sheet-data" style="display: none;" data-sheet="{{ sheet.data|tojson }}"></div>
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>{{ sheet.sheet_name }}</h3>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary me-2" id="toggleFormatPanel">
+                        <i class="bi bi-brush"></i> Format
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary me-2" id="addRowBtn">
+                        <i class="bi bi-plus-lg"></i> Add Row
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary me-2" id="addColumnBtn">
+                        <i class="bi bi-plus-lg"></i> Add Column
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger me-2" id="deleteRowBtn">
+                        <i class="bi bi-trash"></i> Delete Row
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger me-2" id="deleteColumnBtn">
+                        <i class="bi bi-trash"></i> Delete Column
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary me-2" id="mergeCellsBtn">
+                        <i class="bi bi-grid-3x3-gap-fill"></i> Merge Cells
+                    </button>
+                    <button class="btn btn-success btn-sm" id="saveSheetBtn">
+                        <i class="bi bi-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Format Toolbar -->
+    <div class="format-toolbar mb-2">
+        <div class="format-group">
+            <select class="form-select form-select-sm" id="fontName" style="width: 120px">
+                <option value="Arial">Arial</option>
+                <option value="Calibri">Calibri</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Verdana">Verdana</option>
+            </select>
+        </div>
+        
+        <div class="format-group">
+            <select class="form-select form-select-sm" id="fontSize" style="width: 60px">
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11" selected>11</option>
+                <option value="12">12</option>
+                <option value="14">14</option>
+                <option value="16">16</option>
+                <option value="18">18</option>
+            </select>
+        </div>
+        
+        <div class="format-separator"></div>
+        
+        <div class="format-group">
+            <button class="btn btn-sm btn-outline-secondary" id="boldBtn">
+                <i class="bi bi-type-bold"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary mx-1" id="italicBtn">
+                <i class="bi bi-type-italic"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="underlineBtn">
+                <i class="bi bi-type-underline"></i>
+            </button>
+        </div>
+        
+        <div class="format-separator"></div>
+        
+        <div class="format-group">
+            <input type="color" class="form-control form-control-sm form-control-color" id="fontColor" value="#000000">
+            <input type="color" class="form-control form-control-sm form-control-color ms-1" id="bgColor" value="#FFFFFF">
+        </div>
+        
+        <div class="format-separator"></div>
+        
+        <div class="format-group">
+            <button class="btn btn-sm btn-outline-secondary" id="alignLeftBtn">
+                <i class="bi bi-text-left"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary mx-1" id="alignCenterBtn">
+                <i class="bi bi-text-center"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="alignRightBtn">
+                <i class="bi bi-text-right"></i>
+            </button>
+        </div>
+        
+        <div class="format-separator"></div>
+        
+        <div class="format-group">
+            <select class="form-select form-select-sm" id="borderStyle" style="width: 100px">
+                <option value="none">No Border</option>
+                <option value="thin">Thin</option>
+                <option value="medium">Medium</option>
+                <option value="thick">Thick</option>
+                <option value="dotted">Dotted</option>
+                <option value="dashed">Dashed</option>
+            </select>
+            <input type="color" class="form-control form-control-sm form-control-color ms-1" id="borderColor" value="#000000">
+        </div>
+        
+        <div class="format-separator"></div>
+        
+        <div class="format-group">
+            <button class="btn btn-sm btn-outline-secondary" id="mergeBtn">
+                <i class="bi bi-grid-3x3"></i> Merge
+            </button>
+        </div>
+
+        <div class="format-separator"></div>
+
+        <div class="format-group">
+            <button class="btn btn-sm btn-outline-secondary" id="addHeaderBtn" title="Add Header">
+                <i class="bi bi-plus-square"></i> Add Header
+            </button>
+            <button class="btn btn-sm btn-outline-secondary ms-1" id="headerColorBtn" title="Change Header Color">
+                <i class="bi bi-palette"></i> Header Color
+            </button>
+        </div>
+
+        <!-- Add direct merge button -->
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="directMergeBtn">
+                <i class="bi bi-grid-3x3-gap"></i> Merge Cells
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="excel-container" id="excelContainer">
+                <!-- Ensure the table structure is correct -->
+                <table id="sheetTable" class="sheet-table" data-sheet-name="{{ sheet.sheet_name }}">
+                    <thead>
+                        <tr>
+                            {% for header in data[0] %}
+                            <th class="sheet-header" data-col="{{ loop.index0 }}">
+                                <div class="editable-cell" contenteditable="true">{{ header }}</div>
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data[1:] %}
+                        {% set outer_loop = loop %}
+                        <tr data-row="{{ loop.index0 }}" style="height: 25px;">
+                            {% for cell in row %}
+                            {% set row_index = outer_loop.index0 %}
+                            {% set col_index = loop.index0 %}
+                            {% set cell_ref = (65 + col_index)|char ~ (row_index + 2) %}
+                            {% set cell_format = format_metadata[cell_ref]|default({}) if format_metadata else {} %}
+                            <td class="sheet-cell {% if cell and cell.startswith('=') %}formula-cell{% endif %}"
+                                data-row="{{ row_index }}" 
+                                data-col="{{ col_index }}"
+                                {% if cell and cell.startswith('=') %}data-formula="{{ cell }}"{% endif %}
+                                style="{% if cell_format.bg_color %}background-color: {{ cell_format.bg_color }};{% endif %}">
+                                <div class="editable-cell" contenteditable="true">{{ cell }}</div>
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Include formatting panel but hidden by default -->
+    <div class="formatting-panel" id="formattingPanel">
+        {% include 'format_panel.html' %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/sheet-editor.js') }}"></script>
+<script>
+    // Debug: Log data to see if it's loading properly
+    console.log('Sheet data from template:', {{ data|tojson }});
+    
+    function restoreColumnFormulas() {
+        // Check if we have column formulas data
+        const sheetData = {{ sheet.data|tojson }};
+        
+        if (sheetData && sheetData.column_formulas) {
+            // Restore formulas to headers
+            Object.entries(sheetData.column_formulas).forEach(([colIndex, formula]) => {
+                const header = document.querySelector(`.sheet-header[data-col="${colIndex}"]`);
+                if (header) {
+                    header.setAttribute('data-column-formula', formula);
+                    
+                    // Apply formula to all cells in the column
+                    const colCells = document.querySelectorAll(`.sheet-cell[data-col="${colIndex}"]`);
+                    colCells.forEach((cell, rowIndex) => {
+                        const rowNum = rowIndex + 2; // +2 for header row offset
+                        const cellFormula = formula.replace(/{n}/g, rowNum);
+                        
+                        cell.classList.add('formula-cell');
+                        cell.setAttribute('data-formula', cellFormula);
+                        
+                        // Update display
+                        const editableDiv = cell.querySelector('.editable-cell');
+                        if (editableDiv) {
+                            editableDiv.textContent = cellFormula;
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    // Call this function after sheet is loaded
+    restoreColumnFormulas();
+
+    // Add direct merge button functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const directMergeBtn = document.getElementById('directMergeBtn');
+        if (directMergeBtn) {
+            directMergeBtn.addEventListener('click', function() {
+                console.log('Direct merge button clicked');
+                if (typeof mergeCells === 'function') {
+                    mergeCells();
+                } else {
+                    alert('Merge function not found');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

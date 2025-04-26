@@ -1,0 +1,42 @@
+/* Sheet editor styling */
+.sheet-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+.sheet-header {
+    height: 25px;
+    min-width: 80px;
+    max-width: 200px;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    background-color: #E9ECEF;
+    z-index: 10;
+    font-weight: bold;
+}
+
+.sheet-cell {
+    padding: 0;
+    position: relative;
+    height: 25px;
+    min-width: 80px;
+}
+
+.editable-cell {
+    min-height: 25px;
+    height: 100%;
+    width: 100%;
+    padding: 2px 4px;
+    outline: none;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border: none;
+}
+
+.sheet-cell.formula-cell .editable-cell {
+    background-color: #e8f0fe;
+    font-family: monospace;
+}

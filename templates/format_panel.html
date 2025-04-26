@@ -1,0 +1,136 @@
+<div class="card mb-3 formatting-panel">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Cell Formatting</h5>
+    </div>
+    <div class="card-body">
+        <form id="cellFormatForm">
+            <input type="hidden" id="formatSheetName" name="sheet_name" value="{{ sheet.sheet_name }}">
+            <input type="hidden" id="formatCellRange" name="cell_range">
+            
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <label class="form-label">Font</label>
+                    <select class="form-select" id="fontName" name="font_name">
+                        <option value="Arial">Arial</option>
+                        <option value="Calibri">Calibri</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Verdana">Verdana</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Size</label>
+                    <select class="form-select" id="fontSize" name="font_size">
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11" selected>11</option>
+                        <option value="12">12</option>
+                        <option value="14">14</option>
+                        <option value="16">16</option>
+                        <option value="18">18</option>
+                        <option value="20">20</option>
+                        <option value="22">22</option>
+                        <option value="24">24</option>
+                        <option value="26">26</option>
+                        <option value="28">28</option>
+                        <option value="32">32</option>
+                        <option value="36">36</option>
+                        <option value="40">40</option>
+                        <option value="48">48</option>
+                        <option value="56">56</option>
+                        <option value="64">64</option>
+                        <option value="72">72</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <div class="form-check me-3">
+                            <input class="form-check-input" type="checkbox" id="fontBold" name="font_bold">
+                            <label class="form-check-label" for="fontBold"><i class="bi bi-type-bold"></i></label>
+                        </div>
+                        <div class="form-check me-3">
+                            <input class="form-check-input" type="checkbox" id="fontItalic" name="font_italic">
+                            <label class="form-check-label" for="fontItalic"><i class="bi bi-type-italic"></i></label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="fontUnderline" name="font_underline">
+                            <label class="form-check-label" for="fontUnderline"><i class="bi bi-type-underline"></i></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Color</label>
+                    <input type="color" class="form-control form-control-color" id="fontColor" name="font_color" value="#000000">
+                </div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <label class="form-label">Fill Color</label>
+                    <input type="color" class="form-control form-control-color" id="bgColor" name="bg_color" value="#FFFFFF">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Alignment</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="align" id="alignLeft" value="left" checked>
+                        <label class="btn btn-outline-secondary" for="alignLeft"><i class="bi bi-text-left"></i></label>
+                        
+                        <input type="radio" class="btn-check" name="align" id="alignCenter" value="center">
+                        <label class="btn btn-outline-secondary" for="alignCenter"><i class="bi bi-text-center"></i></label>
+                        
+                        <input type="radio" class="btn-check" name="align" id="alignRight" value="right">
+                        <label class="btn btn-outline-secondary" for="alignRight"><i class="bi bi-text-right"></i></label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <label class="form-label">Border</label>
+                    <select class="form-select" id="borderStyle" name="border_style">
+                        <option value="none">None</option>
+                        <option value="thin">Thin</option>
+                        <option value="medium">Medium</option>
+                        <option value="thick">Thick</option>
+                        <option value="dotted">Dotted</option>
+                        <option value="dashed">Dashed</option>
+                        <option value="double">Double</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Border Color</label>
+                    <input type="color" class="form-control form-control-color" id="borderColor" name="border_color" value="#000000">
+                </div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <label class="form-label">Number Format</label>
+                    <select class="form-select" id="numberFormat" name="number_format">
+                        <option value="General">General</option>
+                        <option value="0">Number (0)</option>
+                        <option value="0.00">Decimal (0.00)</option>
+                        <option value="$#,##0.00">Currency ($#,##0.00)</option>
+                        <option value="0%">Percent (0%)</option>
+                        <option value="mm/dd/yy">Date (mm/dd/yy)</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" id="wrapText" name="wrap_text">
+                        <label class="form-check-label" for="wrapText">Wrap Text</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-end mt-3">
+                <button type="button" class="btn btn-secondary btn-sm" id="cancelFormat">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" id="applyFormat">Apply Format</button>
+            </div>
+        </form>
+    </div>
+</div>
