@@ -1,0 +1,323 @@
+/* Preview Elements Styling */
+.preview-text {
+    border: 1px solid #dee2e6;
+    padding: 1rem;
+    min-height: 60px;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    transition: border-color 0.2s;
+}
+
+.preview-text:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Preview Table Styles */
+#previewTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+}
+
+#previewTable th,
+#previewTable td {
+    padding: 8px;
+    border: 1px solid #dee2e6;
+    min-width: 100px;
+}
+
+#previewTable td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+#previewTable th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+#previewTable tr:first-child td {
+    font-weight: bold;
+    background-color: #f8f9fa;
+}
+
+/* Preview hover effects */
+#previewTable td:hover {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Formatting Controls */
+.format-preview {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 1.5rem;
+}
+
+.formatting-section {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.modal-xl .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.table-responsive {
+    max-height: calc(70vh - 120px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #previewTable td {
+        min-width: 80px;
+    }
+    
+    .preview-text {
+        min-height: 45px;
+    }
+}
+
+/* Formula Cell Styling */
+.formula-cell {
+    background-color: #e2e3e5;
+    font-family: monospace;
+}
+
+.formula-cell:hover::after {
+    content: attr(data-formula);
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    z-index: 1000;
+}
+
+/* Add these styles */
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.total-column {
+    background-color: #fff3cd !important; /* Changed to yellow */
+    font-weight: bold;
+    border: 2px solid #ffeeba !important;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+.bi {
+    margin-right: 0.5rem;
+}
+
+/* Welcome banner gradient */
+.card.bg-primary {
+    background: linear-gradient(135deg, #0d6efd, #0099ff) !important;
+}
+
+/* Modal enhancements */
+.modal-content {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+}
+
+/* Form styling */
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+}
+
+/* Alert styling */
+.alert-info {
+    background-color: #cff4fc;
+    border-color: #b6effb;
+}
+
+pre {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+}
+
+/* Enhanced UI Styles */
+.sheet-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 1rem;
+}
+
+.sheet-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.sheet-header {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.sheet-meta {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Bold Headers */
+.table-header {
+    font-weight: 700 !important;
+    background-color: #f8f9fa !important;
+    border-bottom: 2px solid #dee2e6 !important;
+}
+
+/* Enhanced Welcome Banner */
+.welcome-banner {
+    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+}
+
+.welcome-banner h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+/* Enhanced Button Styles */
+.btn-action {
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    transition: all 0.3s;
+}
+
+.btn-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Feature Cards */
+.feature-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+.feature-icon {
+    font-size: 2rem;
+    color: #4b6cb7;
+    margin-bottom: 1rem;
+}
+
+/* Enhanced Modal Styling */
+.modal-custom {
+    border-radius: 10px;
+}
+
+.modal-custom .modal-header {
+    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+    color: white;
+    border-radius: 10px 10px 0 0;
+}
+
+.modal-custom .modal-title {
+    font-weight: 600;
+}
+
+/* History page styles */
+.history-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.history-card .card-header {
+    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+    color: white;
+    padding: 1rem;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    border-top: none;
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.table td, .table th {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+/* Toast notifications */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+}
+
+.toast-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.toast-error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+/* Download button styling */
+.nav-link.btn-success {
+    padding: 0.375rem 1rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.nav-link.btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}

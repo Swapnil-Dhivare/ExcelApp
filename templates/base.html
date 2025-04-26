@@ -3,208 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excel Generator - {% block title %}{% endblock %}</title>
+    <meta name="csrf-token" content="{{ csrf_token() if csrf_token else '' }}">
+    <title>{% block title %}Excel Generator{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <style>
-        .sheet-item { transition: all 0.2s; }
-        .sheet-item:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .template-card { cursor: pointer; }
-        .template-card:hover { background-color: #f8f9fa; }
-        .badge-format { font-size: 0.75rem; margin-right: 3px; }
-        #dataGrid { min-height: 300px; overflow: auto; }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    {% block head %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Excel Generator</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#addSheetModal">
-                            <i class="bi bi-plus-circle"></i> Add Sheet
-                        </a>
-                    </li>
-                </ul>
-                <div class="d-flex">
-                    <a href="{{ url_for('download_excel') }}" class="btn btn-success me-2" {% if not sheets_data %}disabled{% endif %}>
-                        <i class="bi bi-file-earmark-excel"></i> Download
-                    </a>
-                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                        <i class="bi bi-upload"></i> Upload
-                    </button>
+    {% include 'navbar.html' %}
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show m-3" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-            </div>
-        </div>
-    </nav>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
-    </div>
-
-    <!-- Add Sheet Modal -->
-    <div class="modal fade" id="addSheetModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Sheet</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form method="POST" action="{{ url_for('add_sheet') }}">
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Sheet Name</label>
-                                    <input type="text" class="form-control" name="sheet_name" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Use Template</label>
-                                    <select class="form-select" name="template_id">
-                                        <option value="">None</option>
-                                        {% for template in built_in_templates %}
-                                            <option value="{{ template.id }}">{{ template.name }}</option>
-                                        {% endfor %}
-                                        {% for template in custom_templates %}
-                                            <option value="{{ template.id }}">{{ template.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Headers (comma separated)</label>
-                                    <input type="text" class="form-control" name="headers" placeholder="Column1,Column2,Column3">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Data (tab-delimited rows)</label>
-                                    <textarea class="form-control" name="data" rows="5" placeholder="Value1&#9;Value2&#9;Value3&#10;Value4&#9;Value5&#9;Value6"></textarea>
-                                    <small class="text-muted">Separate columns with tabs, rows with new lines</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="accordion mt-3" id="formattingAccordion">
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#formattingOptions">
-                                        Advanced Formatting
-                                    </button>
-                                </h2>
-                                <div id="formattingOptions" class="accordion-collapse collapse" data-bs-parent="#formattingAccordion">
-                                    <div class="accordion-body">
-                                        <div class="row g-3">
-                                            <div class="col-md-4">
-                                                <label class="form-label">Header Font Size</label>
-                                                <input type="number" class="form-control" name="title_font_size" value="14">
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label">Cell Font Size</label>
-                                                <input type="number" class="form-control" name="cell_font_size" value="11">
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label">Alignment</label>
-                                                <select class="form-select" name="cell_alignment">
-                                                    <option value="left">Left</option>
-                                                    <option value="center" selected>Center</option>
-                                                    <option value="right">Right</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Header Color</label>
-                                                <input type="color" class="form-control form-control-color" name="header_bg_color" value="#4F81BD">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Number Format</label>
-                                                <select class="form-select" name="number_format">
-                                                    <option value="General">General</option>
-                                                    <option value="0">Integer</option>
-                                                    <option value="0.00">Decimal</option>
-                                                    <option value="$#,##0.00">Currency</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="title_bold" checked>
-                                                    <label class="form-check-label">Bold Headers</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="text_wrap">
-                                                    <label class="form-check-label">Wrap Text</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Add Sheet</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Upload Modal -->
-    <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Upload Excel File</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Select Excel file</label>
-                            <input class="form-control" type="file" name="file" accept=".xlsx,.xls" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Upload</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    {% block content %}{% endblock %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/preview.js') }}"></script>
+    
+    <!-- Add this script to explicitly initialize dropdowns -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Template selection handler
-            document.querySelector('select[name="template_id"]')?.addEventListener('change', function() {
-                const templateId = this.value;
-                if (!templateId) return;
-                
-                const templates = {{ (built_in_templates + custom_templates)|tojson }};
-                const template = templates.find(t => t.id === templateId);
-                
-                if (template) {
-                    document.querySelector('input[name="sheet_name"]').value = template.default_sheet_name || '';
-                    document.querySelector('input[name="headers"]').value = template.headers.join(', ');
-                    
-                    // Format sample data as tab-delimited rows
-                    const sampleData = template.sample_data.map(row => row.join('\t')).join('\n');
-                    document.querySelector('textarea[name="data"]').value = sampleData;
-                }
+            // Initialize all dropdowns
+            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+            dropdownElementList.map(function(element) {
+                return new bootstrap.Dropdown(element);
+            });
+            
+            // Make sure clicking the dropdown toggle works
+            document.querySelectorAll('.dropdown-toggle').forEach(function(element) {
+                element.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var dropdown = bootstrap.Dropdown.getInstance(this);
+                    if (!dropdown) {
+                        dropdown = new bootstrap.Dropdown(this);
+                    }
+                    dropdown.toggle();
+                });
             });
         });
     </script>
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>

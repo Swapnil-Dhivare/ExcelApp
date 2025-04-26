@@ -1,234 +1,215 @@
 {% extends "base.html" %}
 
-{% block title %}Excel Generator{% endblock %}
-
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>Your Sheets</h5>
-                <span class="badge bg-primary">{{ sheets|length }} sheets</span>
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <div class="container">
+        <h1>Welcome, {{ current_user.name }}! 👋</h1>
+        <p class="lead">Create and manage your Excel sheets with automatic calculations</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <!-- Features Overview -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="bi bi-calculator feature-icon"></i>
+                        <h5>Auto Calculations</h5>
+                        <p class="text-muted">Total columns calculate automatically</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="bi bi-highlighter feature-icon"></i>
+                        <h5>Highlighted Totals</h5>
+                        <p class="text-muted">Total columns are highlighted in yellow</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <i class="bi bi-file-earmark-excel feature-icon"></i>
+                        <h5>Excel Compatible</h5>
+                        <p class="text-muted">Download as Excel with formulas</p>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                {% if sheets %}
-                    <div class="list-group">
-                        {% for sheet in sheets %}
-                            <div class="list-group-item sheet-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1">{{ sheet.sheet_name }}</h6>
-                                    <small class="text-muted">
-                                        {{ sheet.headers|length }} columns, {{ sheet.data|length }} rows
-                                    </small>
-                                </div>
-                                <div>
-                                    <!-- Preview Button -->
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#previewModal" 
-                                            onclick="loadSheetPreview('{{ sheet.sheet_name }}')">
-                                        <i class="bi bi-eye"></i> Preview
-                                    </button>
-                                    <!-- Remove Button -->
-                                    <form method="POST" action="{{ url_for('remove_sheet', sheet_name=sheet.sheet_name) }}" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+
+            <!-- Sheets List -->
+            <div class="card sheet-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="sheet-header mb-0">Your Sheets</h5>
+                    <button class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#addSheetModal">
+                        <i class="bi bi-plus-lg"></i> Add Sheet
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if current_user.sheets %}
+                        <div class="list-group">
+                        {% for sheet in current_user.sheets %}
+                            <div class="list-group-item sheet-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="sheet-header">{{ sheet.sheet_name }}</h5>
+                                        <small class="sheet-meta">Created: {{ sheet.created_at.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                    <div class="btn-group">
+                                        <button class="btn btn-outline-primary btn-action" 
+                                                onclick="loadSheetPreview('{{ sheet.sheet_name }}')">
+                                            <i class="bi bi-eye"></i> Preview
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-action">
                                             <i class="bi bi-trash"></i>
                                         </button>
-                                    </form>
+                                    </div>
                                 </div>
                             </div>
-                            <h3>Format Sheet: {{ sheet.sheet_name }}</h3>
-                            <form method="POST" action="{{ url_for('update_sheet_format', sheet_name=sheet.sheet_name) }}">
-                                <label for="header_bg_color">Header Background Color:</label>
-                                <input type="color" name="header_bg_color" value="{{ sheet.formatting.header_bg_color }}">
-                                
-                                <label for="cell_alignment">Cell Alignment:</label>
-                                <select name="cell_alignment">
-                                    <option value="left" {% if sheet.formatting.cell_alignment == 'left' %}selected{% endif %}>Left</option>
-                                    <option value="center" {% if sheet.formatting.cell_alignment == 'center' %}selected{% endif %}>Center</option>
-                                    <option value="right" {% if sheet.formatting.cell_alignment == 'right' %}selected{% endif %}>Right</option>
-                                </select>
-                                
-                                <button type="submit">Update Format</button>
-                            </form>
                         {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="alert alert-info">
-                        No sheets added yet. Click "Add Sheet" to get started.
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Templates</h5>
-            </div>
-            <div class="card-body">
-                <div class="list-group">
-                    {% for template in built_in_templates %}
-                        <a href="#" class="list-group-item list-group-item-action template-card" 
-                           data-bs-toggle="modal" data-bs-target="#addSheetModal"
-                           onclick="document.querySelector('select[name=\"template_id\"]').value='{{ template.id }}'; document.querySelector('select[name=\"template_id\"]').dispatchEvent(new Event('change'));">
-                            <div class="d-flex justify-content-between">
-                                <strong>{{ template.name }}</strong>
-                                <span class="badge bg-primary">Built-in</span>
-                            </div>
-                            <small class="text-muted">{{ template.headers|join(', ') }}</small>
-                        </a>
-                    {% endfor %}
-                    
-                    {% for template in custom_templates %}
-                        <a href="#" class="list-group-item list-group-item-action template-card"
-                           data-bs-toggle="modal" data-bs-target="#addSheetModal"
-                           onclick="document.querySelector('select[name=\"template_id\"]').value='{{ template.id }}'; document.querySelector('select[name=\"template_id\"]').dispatchEvent(new Event('change'));">
-                            <div class="d-flex justify-content-between">
-                                <strong>{{ template.name }}</strong>
-                                <span class="badge bg-success">Custom</span>
-                            </div>
-                            <small class="text-muted">{{ template.headers|join(', ') }}</small>
-                        </a>
-                    {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-earmark-spreadsheet display-1 text-muted"></i>
+                            <h5 class="mt-3">No sheets yet</h5>
+                            <p class="text-muted">Create your first sheet to get started!</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <h5>Quick Actions</h5>
+
+        <!-- Quick Guide Sidebar -->
+        <div class="col-md-4">
+            <!-- Quick Start Guide -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Start Guide</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6><i class="bi bi-1-circle"></i> Create a Sheet</h6>
+                        <p class="small text-muted">Click "Add Sheet" and enter your data using commas and semicolons.</p>
+                    </div>
+                    <div class="mb-4">
+                        <h6><i class="bi bi-2-circle"></i> Auto Calculations</h6>
+                        <p class="small text-muted">Total columns will automatically sum up assignment scores.</p>
+                    </div>
+                    <div>
+                        <h6><i class="bi bi-3-circle"></i> Download & Share</h6>
+                        <p class="small text-muted">Download your Excel file with working formulas!</p>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('download_excel') }}" class="btn btn-success" {% if not sheets %}disabled{% endif %}>
-                        <i class="bi bi-file-earmark-excel"></i> Download Excel
+
+            <!-- Formula Guide -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Formula Guide</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-lightbulb"></i> Auto-Calculate Example</h6>
+                        <pre class="small mb-0">
+Sr No,Name,Roll No,ASS1,ASS2,ASS3,Total
+1,John,101,85,90,88,=SUM(D2:F2)
+                        </pre>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success"></i>
+                            <strong>Total column</strong> will be highlighted green
+                        </li>
+                        <li>
+                            <i class="bi bi-check-circle text-success"></i>
+                            <strong>Formulas</strong> calculate automatically
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Sample Templates -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Sample Templates</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Assignment Sheet</h6>
+                                <small class="text-muted">With auto-calculations</small>
+                            </div>
+                            <i class="bi bi-file-earmark-excel"></i>
+                        </div>
                     </a>
-                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#uploadModal">
-                        <i class="bi bi-upload"></i> Import Excel
-                    </button>
+                    <!-- Add more template options -->
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<h1>Uploaded Sheets</h1>
-
-{% if sheets %}
-    <div>
-        {% for sheet in sheets %}
-            <h2>{{ sheet.sheet_name }}</h2>
-            <table border="1">
-                <thead>
-                    <tr>
-                        {% for header in sheet.headers %}
-                            <th>{{ header }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in sheet.data %}
-                        <tr>
-                            {% for cell in row %}
-                                <td>{{ cell }}</td>
-                            {% endfor %}
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endfor %}
-    </div>
-{% else %}
-    <p>No sheets uploaded yet.</p>
-{% endif %}
-
-<h1>Reorder Sheets</h1>
-<form id="reorder-form" method="POST" action="{{ url_for('reorder_sheets') }}">
-    <ul id="sheet-order">
-        {% for sheet_name in sheet_order %}
-            <li>
-                <input type="hidden" name="order[]" value="{{ sheet_name }}">
-                {{ sheet_name }}
-            </li>
-        {% endfor %}
-    </ul>
-    <button type="submit">Save Order</button>
-</form>
-
-<script>
-    // Add drag-and-drop functionality for reordering sheets
-    const sheetOrder = document.getElementById('sheet-order');
-    new Sortable(sheetOrder, {
-        animation: 150,
-        onEnd: function () {
-            const inputs = sheetOrder.querySelectorAll('input[name="order[]"]');
-            inputs.forEach((input, index) => {
-                input.value = sheetOrder.children[index].textContent.trim();
-            });
-        }
-    });
-</script>
-
-<script>
-    function loadSheetPreview(sheetName) {
-        // Find the sheet data from the global `sheets` variable
-        const sheet = {{ sheets|tojson }}.find(s => s.sheet_name === sheetName);
-        if (!sheet) return;
-
-        // Set the sheet name in the hidden input
-        document.getElementById('editSheetName').value = sheet.sheet_name;
-
-        // Populate the table headers
-        const headersRow = document.getElementById('sheetPreviewHeaders');
-        headersRow.innerHTML = '';
-        sheet.headers.forEach(header => {
-            const th = document.createElement('th');
-            th.textContent = header;
-            headersRow.appendChild(th);
-        });
-
-        // Populate the table body
-        const body = document.getElementById('sheetPreviewBody');
-        body.innerHTML = '';
-        sheet.data.forEach((row, rowIndex) => {
-            const tr = document.createElement('tr');
-            row.forEach((cell, colIndex) => {
-                const td = document.createElement('td');
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.name = `data[${rowIndex}][${colIndex}]`;
-                input.value = cell;
-                input.className = 'form-control';
-                td.appendChild(input);
-                tr.appendChild(td);
-            });
-            body.appendChild(tr);
-        });
-    }
-</script>
-
-<!-- Preview and Edit Modal -->
-<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+<!-- Enhanced Add Sheet Modal -->
+<div class="modal fade" id="addSheetModal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="previewModalLabel">Sheet Preview</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Add New Sheet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="editSheetForm" method="POST" action="{{ url_for('update_sheet_data') }}">
-                    <input type="hidden" name="sheet_name" id="editSheetName">
-                    <table class="table table-bordered" id="sheetPreviewTable">
-                        <thead>
-                            <tr id="sheetPreviewHeaders"></tr>
-                        </thead>
-                        <tbody id="sheetPreviewBody"></tbody>
-                    </table>
-                    <button type="submit" class="btn btn-success">Save Changes</button>
+                <form method="POST" action="{{ url_for('add_sheet') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Sheet Name</label>
+                        <input type="text" name="sheet_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data</label>
+                        <div class="alert alert-info">
+                            <strong>Pro Tip:</strong> Add a Total column to automatically calculate sums!
+                        </div>
+                        <textarea name="data" class="form-control" rows="5" required 
+                                placeholder="Sr No,Name,Roll No,ASS1,ASS2,ASS3,Total;1,John,101,85,90,88,=SUM(D2:F2)"></textarea>
+                        <div class="form-text">
+                            <ul class="mb-0">
+                                <li>Use commas (,) between columns</li>
+                                <li>Use semicolons (;) between rows</li>
+                                <li>Add =SUM(start:end) for totals</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Sheet</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">Sheet Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="previewTable" class="table table-bordered">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveSheetChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/preview.js') }}"></script>
 {% endblock %}
