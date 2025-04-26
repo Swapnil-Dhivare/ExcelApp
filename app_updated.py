@@ -793,203 +793,195 @@ def remove_merge_cells():
 @login_required
 def download_excel():
     try:
+        import io
+        from openpyxl import Workbook
+        from openpyxl.utils import get_column_letter
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        import json
+        import gc
+        
+        # Force garbage collection before processing
+        gc.collect()
+        
+        # Get user sheets
         user_sheets = Sheet.query.filter_by(user_id=current_user.id).all()
         
         if not user_sheets:
             flash('No sheets found to download', 'warning')
             return redirect(url_for('index'))
         
-        # Create workbook
+        # Create a new workbook
         workbook = Workbook()
+        
         # Remove default sheet
-        if 'Sheet' in workbook.sheetnames:
-            std = workbook['Sheet']
-            workbook.remove(std)
+        default_sheet = workbook.active
+        workbook.remove(default_sheet)
         
-        # Track history for logging
-        sheet_data_for_history = []
+        app.logger.info(f"Starting to process {len(user_sheets)} sheets")
         
-        for sheet in user_sheets:
-            worksheet = workbook.create_sheet(sheet.sheet_name[:31])
-            
-            # Parse JSON data, handling both array and object formats
-            raw_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
-            
-            # Extract data and metadata
-            if isinstance(raw_data, dict):
-                data = raw_data.get('data', [])
-                format_metadata = raw_data.get('format_metadata', {})
-                dimensions = raw_data.get('dimensions', {})
-                merged_cells = raw_data.get('merged_cells', [])
-                header_colors = raw_data.get('header_colors', {})
-                column_formulas = raw_data.get('column_formulas', {})  # NEW
-            else:
-                data = raw_data
-                format_metadata = {}
-                dimensions = {}
-                merged_cells = []
-                header_colors = {}
-                column_formulas = {}  # NEW
-            
-            # Apply column widths
-            column_widths = dimensions.get('column_widths', {})
-            for col_idx_str, width in column_widths.items():
-                col_idx = int(col_idx_str)
-                # Convert from pixels to Excel units (approx)
-                excel_width = width / 7
-                worksheet.column_dimensions[get_column_letter(col_idx + 1)].width = excel_width
-            
-            # Apply row heights
-            row_heights = dimensions.get('row_heights', {})
-            for row_idx_str, height in row_heights.items():
-                row_idx = int(row_idx_str) + 1  # Excel rows are 1-based
-                # Convert from pixels to Excel units (approx)
-                excel_height = height * 0.75
-                worksheet.row_dimensions[row_idx].height = excel_height
-            
-            # Write data and preserve formulas
-            if data:
-                for i, row in enumerate(data):
-                    for j, cell_value in enumerate(row):
-                        # Excel is 1-indexed
-                        cell = worksheet.cell(row=i+1, column=j+1)
-                        
-                        # If it's a formula, set it as a formula
-                        if isinstance(cell_value, str) and cell_value.startswith('='):
-                            cell.value = cell_value
-                        else:
-                            cell.value = cell_value
-                        
-                        # Apply cell formatting
-                        cell_ref = f"{get_column_letter(j+1)}{i+1}"
-                        if cell_ref in format_metadata:
-                            apply_excel_format(cell, format_metadata[cell_ref])
-                        
-                        # Apply header colors for first row
-                        if i == 0 and str(j) in header_colors:
-                            if not cell.fill or cell.fill.start_color.type == 'theme':
-                                cell.fill = PatternFill(start_color=header_colors[str(j)].replace('#', ''), 
-                                                      end_color=header_colors[str(j)].replace('#', ''),
-                                                      fill_type="solid")
-            
-            # Apply merged cells
-            for merge_info in merged_cells:
-                # Excel is 1-indexed
-                first_row = merge_info['first_row'] + 1
-                last_row = merge_info['last_row'] + 1
-                first_col = merge_info['first_col'] + 1
-                last_col = merge_info['last_col'] + 1
+        # Create a record for download history
+        download_data = []
+        
+        # Process each sheet
+        for idx, sheet_db in enumerate(user_sheets):
+            try:
+                # Log progress
+                app.logger.info(f"Processing sheet {idx+1}/{len(user_sheets)}: {sheet_db.sheet_name}")
                 
-                merge_range = f"{get_column_letter(first_col)}{first_row}:{get_column_letter(last_col)}{last_row}"
-                worksheet.merge_cells(merge_range)
+                # Ensure valid sheet name (Excel limits to 31 chars)
+                safe_sheet_name = sheet_db.sheet_name[:31]
                 
-                # Set the content in the top-left cell
-                worksheet.cell(row=first_row, column=first_col).value = merge_info.get('content', '')
-            
-            # Track sheet for history
-            sheet_data_for_history.append({
-                'sheet_name': sheet.sheet_name,
-                'row_count': len(data) if data else 0,
-                'col_count': len(data[0]) if data and data[0] else 0
-            })
+                # Create worksheet
+                worksheet = workbook.create_sheet(title=safe_sheet_name)
+                
+                # Parse data from JSON
+                if isinstance(sheet_db.data, str):
+                    try:
+                        sheet_data = json.loads(sheet_db.data)
+                    except json.JSONDecodeError:
+                        app.logger.error(f"JSON decode error for sheet: {sheet_db.sheet_name}")
+                        flash(f'Error parsing data for sheet: {sheet_db.sheet_name}', 'error')
+                        continue
+                else:
+                    sheet_data = sheet_db.data
+                
+                # Handle both old array format and new dictionary format
+                if isinstance(sheet_data, list):
+                    # Old format: direct array of rows
+                    data = sheet_data
+                    format_metadata = {}
+                    dimensions = {}
+                    merged_cells = []
+                elif isinstance(sheet_data, dict):
+                    # New format: object with data and metadata
+                    data = sheet_data.get('data', [])
+                    format_metadata = sheet_data.get('format_metadata', {})
+                    dimensions = sheet_data.get('dimensions', {})
+                    merged_cells = sheet_data.get('merged_cells', [])
+                else:
+                    app.logger.error(f"Unknown data format for sheet: {sheet_db.sheet_name}")
+                    continue
+                
+                # Write data to worksheet
+                if not data or not isinstance(data, list):
+                    app.logger.warning(f"No valid data for sheet: {sheet_db.sheet_name}")
+                    continue
+                
+                # Add to download record
+                download_data.append({
+                    'sheet_name': sheet_db.sheet_name,
+                    'row_count': len(data),
+                    'col_count': len(data[0]) if data and len(data) > 0 else 0
+                })
+                
+                # Process in chunks to handle large sheets
+                CHUNK_SIZE = 1000
+                
+                # Write header first (row 0)
+                if data and len(data) > 0:
+                    for col_idx, header in enumerate(data[0]):
+                        cell = worksheet.cell(row=1, column=col_idx + 1)
+                        cell.value = header
+                        
+                        # Apply header formatting 
+                        cell.font = Font(bold=True, size=12)
+                        cell.fill = PatternFill(start_color="E9ECEF", end_color="E9ECEF", fill_type="solid")
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
+                
+                # Write data rows in chunks
+                for start_idx in range(1, len(data), CHUNK_SIZE):
+                    end_idx = min(start_idx + CHUNK_SIZE, len(data))
+                    chunk = data[start_idx:end_idx]
+                    
+                    for row_idx, row_data in enumerate(chunk, start=start_idx + 1):
+                        for col_idx, cell_value in enumerate(row_data):
+                            # Handle Excel max columns (16384)
+                            if col_idx >= 16384:
+                                app.logger.warning(f"Exceeded Excel column limit in sheet {sheet_db.sheet_name}")
+                                break
+                                
+                            cell = worksheet.cell(row=row_idx, column=col_idx + 1)
+                            
+                            # Parse formulas
+                            if isinstance(cell_value, str) and cell_value.startswith('='):
+                                cell.value = cell_value
+                            else:
+                                cell.value = cell_value
+                
+                # Set column widths
+                column_widths = dimensions.get('column_widths', {})
+                for col_idx_str, width in column_widths.items():
+                    try:
+                        col_idx = int(col_idx_str)
+                        worksheet.column_dimensions[get_column_letter(col_idx + 1)].width = width
+                    except (ValueError, KeyError) as e:
+                        app.logger.warning(f"Error setting column width: {e}")
+                
+                # Set row heights
+                row_heights = dimensions.get('row_heights', {})
+                for row_idx_str, height in row_heights.items():
+                    try:
+                        row_idx = int(row_idx_str)
+                        worksheet.row_dimensions[row_idx + 1].height = height
+                    except (ValueError, KeyError) as e:
+                        app.logger.warning(f"Error setting row height: {e}")
+                
+                # Apply merged cells
+                for merge in merged_cells:
+                    try:
+                        first_row = merge.get('first_row', 0)
+                        last_row = merge.get('last_row', 0)
+                        first_col = merge.get('first_col', 0)
+                        last_col = merge.get('last_col', 0)
+                        
+                        # Excel uses 1-based indexing for cells
+                        merge_range = f"{get_column_letter(first_col + 1)}{first_row + 1}:{get_column_letter(last_col + 1)}{last_row + 1}"
+                        worksheet.merge_cells(merge_range)
+                        
+                        # Set content in the merged cell
+                        if 'content' in merge:
+                            worksheet.cell(row=first_row + 1, column=first_col + 1).value = merge.get('content', '')
+                    except Exception as merge_error:
+                        app.logger.warning(f"Error applying merge: {merge_error}")
+                
+            except Exception as sheet_error:
+                app.logger.error(f"Error processing sheet {sheet_db.sheet_name}: {str(sheet_error)}")
+                continue
         
-        # Save to a temporary file
-        temp_file = os.path.join(app.config['UPLOAD_FOLDER'], 'temp_workbook.xlsx')
-        workbook.save(temp_file)
+        # Save workbook to bytes buffer
+        output = io.BytesIO()
+        workbook.save(output)
+        output.seek(0)
         
-        # Log the download in history
-        history_entry = DownloadHistory(
-            user_id=current_user.id,
-            filename=f"excel_sheets_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-            sheet_data=json.dumps(sheet_data_for_history)
-        )
-        db.session.add(history_entry)
-        db.session.commit()
+        # Record the download in history
+        try:
+            history = DownloadHistory(
+                user_id=current_user.id,
+                filename=f"export_{datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx",
+                sheet_data=json.dumps(download_data),
+                downloaded_at=datetime.utcnow()
+            )
+            db.session.add(history)
+            db.session.commit()
+        except Exception as history_error:
+            app.logger.warning(f"Could not save download history: {str(history_error)}")
         
+        # Clean up to free memory
+        del workbook
+        gc.collect()
+        
+        # Send the file
         return send_file(
-            temp_file,
+            output,
             as_attachment=True,
-            download_name=f"excel_sheets_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            download_name=f"Excel_Export_{datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-    
+        
     except Exception as e:
-        flash(f'Error generating Excel file: {str(e)}', 'danger')
+        app.logger.error(f"Error generating Excel file: {str(e)}", exc_info=True)
+        flash(f"Error generating Excel file: {str(e)}", "error")
         return redirect(url_for('index'))
-
-def apply_excel_format(cell, format_data):
-    # Font formatting
-    if any(key in format_data for key in ['font_name', 'font_size', 'font_bold', 'font_italic', 'font_underline', 'font_color']):
-        font_name = format_data.get('font_name', 'Calibri')
-        font_size = int(format_data.get('font_size', 11))
-        font_bold = format_data.get('font_bold') == 'on'
-        font_italic = format_data.get('font_italic') == 'on'
-        font_underline = format_data.get('font_underline') == 'on'
-        font_color = format_data.get('font_color', '000000')
-        
-        # Strip # from hex color if present
-        if font_color and font_color.startswith('#'):
-            font_color = font_color[1:]
-        
-        cell.font = Font(
-            name=font_name,
-            size=font_size,
-            bold=font_bold,
-            italic=font_italic,
-            underline='single' if font_underline else None,
-            color=font_color
-        )
-    
-    # Background color
-    if 'bg_color' in format_data:
-        bg_color = format_data['bg_color']
-        if bg_color and bg_color.startswith('#'):
-            bg_color = bg_color[1:]
-        
-        cell.fill = PatternFill(
-            start_color=bg_color,
-            end_color=bg_color,
-            fill_type="solid"
-        )
-    
-    # Alignment
-    if 'align' in format_data:
-        align = format_data['align']
-        horizontal = {
-            'left': 'left',
-            'center': 'center',
-            'right': 'right',
-        }.get(align, 'left')
-        
-        wrap_text = format_data.get('wrap_text') == 'on'
-        
-        cell.alignment = Alignment(
-            horizontal=horizontal,
-            vertical='center',
-            wrap_text=wrap_text
-        )
-    
-    # Borders
-    if 'border_style' in format_data and format_data['border_style'] != 'none':
-        border_style = format_data['border_style']
-        border_color = format_data.get('border_color', '000000')
-        
-        # Strip # from hex color if present
-        if border_color and border_color.startswith('#'):
-            border_color = border_color[1:]
-        
-        # Convert border style
-        excel_border_style = {
-            'thin': 'thin',
-            'medium': 'medium',
-            'thick': 'thick',
-            'dotted': 'dotted',
-            'dashed': 'dashed',
-            'double': 'double'
-        }.get(border_style, 'thin')
-        
-        side = Side(style=excel_border_style, color=border_color)
-        cell.border = Border(left=side, right=side, top=side, bottom=side)
 
 @app.route('/update_sheet_format/<sheet_name>', methods=['POST'])
 @login_required
@@ -1037,21 +1029,34 @@ def update_sheet_format(sheet_name):
         flash('Error updating sheet formatting.', 'error')
     return redirect(url_for('index'))
 
-@app.route('/update_sheet_data', methods=['POST'])
+@app.route('/save_sheet_data', methods=['POST'])
 @login_required
-def update_sheet_data():
-    global sheets_data
-    data = request.get_json()
-    sheet_name = data.get('sheet_name')
-    updated_data = data.get('data')
-
-    sheet = next((s for s in sheets_data if s['sheet_name'] == sheet_name), None)
-    if not sheet:
-        return jsonify({'success': False, 'error': f'Sheet "{sheet_name}" not found.'})
+def save_sheet_data():
     try:
-        sheet['data'] = [[cell.strip() for cell in row] for row in updated_data]
+        data = request.get_json()
+        sheet_name = data.get('sheet_name')
+        sheet_data = data.get('data')
+        format_info = data.get('format_info', {})
+        
+        sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
+        if not sheet:
+            return jsonify({'success': False, 'error': 'Sheet not found'})
+        
+        # Prepare the complete sheet data structure
+        full_data = {
+            'data': sheet_data,
+            'format_info': format_info
+        }
+        
+        # Save to database
+        sheet.data = json.dumps(full_data)
+        sheet.updated_at = datetime.utcnow()
+        db.session.commit()
+        
         return jsonify({'success': True})
+        
     except Exception as e:
+        app.logger.error(f"Error saving sheet data: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/history')
@@ -1117,128 +1122,19 @@ def edit_sheet(sheet_name):
         return redirect(url_for('index'))
     
     try:
-        # Parse JSON data with improved error handling
-        try:
-            if isinstance(sheet.data, str):
-                raw_data = json.loads(sheet.data)
-            else:
-                raw_data = sheet.data
-        except json.JSONDecodeError:
-            app.logger.error(f"Error decoding JSON data for sheet {sheet_name}")
-            raw_data = []
-        
-        # Extract data and metadata based on structure
-        if isinstance(raw_data, dict):
-            data = raw_data.get('data', [])
-            format_metadata = raw_data.get('format_metadata', {})
-            dimensions = raw_data.get('dimensions', {})
-        else:
-            # If it's just an array, use it directly
-            data = raw_data
-            format_metadata = {}
-            dimensions = {}
-        
-        # Ensure we have valid data
-        if not isinstance(data, list) or len(data) == 0:
-            data = [["Empty Sheet"]]
-        
-        # Add debug logging
-        app.logger.debug(f"Sheet {sheet_name} data: {data[:2]}")
-        
-        # Pass the entire raw data to the template for merged cells handling
-        return render_template('edit_sheet.html', 
-                          sheet=sheet, 
-                          data=data,
-                          format_metadata=format_metadata,
-                          dimensions=dimensions,
-                          raw_sheet_data=raw_data)
-                          
+        # Parse JSON data
+        raw_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+        data = raw_data.get('data', []) if isinstance(raw_data, dict) else raw_data
+
+        # Ensure valid data
+        if not data:
+            data = [[""]]
+
+        return render_template('edit_sheet.html', sheet=sheet, data=data)
     except Exception as e:
         app.logger.error(f"Error editing sheet: {str(e)}")
-        flash(f'Error loading sheet: {str(e)}', 'error')
+        flash(f"Error loading sheet: {str(e)}", 'error')
         return redirect(url_for('index'))
-
-@app.route('/save_sheet_data', methods=['POST'])
-@login_required
-def save_sheet_data():
-    data = request.get_json()
-    sheet_name = data.get('sheet_name')
-    sheet_data = data.get('data')
-    dimensions = data.get('dimensions', {})
-    merged_cells = data.get('merged_cells', [])
-    header_colors = data.get('header_colors', {})
-    column_formulas = data.get('column_formulas', {})  # NEW
-    
-    app.logger.debug(f"Attempting to save sheet: {sheet_name}")
-    
-    if not sheet_name:
-        app.logger.error("No sheet name provided")
-        return jsonify({'success': False, 'error': 'Sheet name not provided'})
-        
-    # Get the sheet
-    sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
-    
-    if not sheet:
-        app.logger.error(f"Sheet '{sheet_name}' not found for user {current_user.id}")
-        return jsonify({'success': False, 'error': 'Sheet not found'})
-    
-    try:
-        # Parse existing data to preserve format metadata
-        existing_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
-        
-        # Update with new data while preserving metadata
-        structured_data = {}
-        
-        # If existing data is already structured, preserve format metadata
-        if isinstance(existing_data, dict):
-            structured_data = existing_data
-            structured_data['data'] = sheet_data
-            
-            # Update dimensions if provided
-            if dimensions:
-                if 'dimensions' not in structured_data:
-                    structured_data['dimensions'] = {}
-                
-                if 'column_widths' in dimensions:
-                    structured_data['dimensions']['column_widths'] = dimensions['column_widths']
-                    
-                if 'row_heights' in dimensions:
-                    structured_data['dimensions']['row_heights'] = dimensions['row_heights']
-                    
-            # Update merged cells
-            if merged_cells:
-                structured_data['merged_cells'] = merged_cells
-                
-            # Update header colors
-            if header_colors:
-                structured_data['header_colors'] = header_colors
-                
-            # Update column formulas (NEW)
-            if column_formulas:
-                structured_data['column_formulas'] = column_formulas
-                
-        else:
-            # If existing data is just an array, create structured format
-            structured_data = {
-                'data': sheet_data,
-                'format_metadata': {},
-                'dimensions': dimensions,
-                'merged_cells': merged_cells,
-                'header_colors': header_colors,
-                'column_formulas': column_formulas  # NEW
-            }
-        
-        # Save back to database
-        sheet.data = json.dumps(structured_data)
-        sheet.updated_at = datetime.utcnow()  # Update timestamp
-        db.session.commit()
-        
-        app.logger.info(f"Sheet '{sheet_name}' saved successfully")
-        return jsonify({'success': True})
-    
-    except Exception as e:
-        app.logger.error(f"Error saving sheet data: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/sheet_preview/<sheet_name>')
 @login_required

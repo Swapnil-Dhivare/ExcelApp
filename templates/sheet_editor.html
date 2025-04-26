@@ -13,6 +13,91 @@
             </button>
         </div>
     </div>
+    
+    <!-- Formatting Panel (initially hidden) -->
+    <div class="formatting-panel p-2 bg-light border-bottom" style="display: none;">
+        <div class="row g-2">
+            <!-- Text Formatting -->
+            <div class="col-auto">
+                <div class="btn-group" role="group" aria-label="Text formatting">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="boldBtn" title="Bold">
+                        <i class="bi bi-type-bold"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="italicBtn" title="Italic">
+                        <i class="bi bi-type-italic"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="underlineBtn" title="Underline">
+                        <i class="bi bi-type-underline"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Alignment -->
+            <div class="col-auto">
+                <div class="btn-group" role="group" aria-label="Text alignment">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="alignLeftBtn" title="Align Left">
+                        <i class="bi bi-text-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="alignCenterBtn" title="Align Center">
+                        <i class="bi bi-text-center"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="alignRightBtn" title="Align Right">
+                        <i class="bi bi-text-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Cell Operations -->
+            <div class="col-auto">
+                <div class="btn-group" role="group" aria-label="Cell operations">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="mergeCellsBtn" title="Merge Cells">
+                        <i class="bi bi-grid-3x2"></i> Merge
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="divideCellBtn" title="Divide Cell">
+                        <i class="bi bi-grid-3x2-gap"></i> Divide
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Row/Column Operations -->
+            <div class="col-auto">
+                <div class="btn-group" role="group" aria-label="Row/Column operations">
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="deleteRowBtn" title="Delete Row">
+                        <i class="bi bi-dash-circle"></i> Row
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="deleteColumnBtn" title="Delete Column">
+                        <i class="bi bi-dash-circle"></i> Column
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Header/Cell Color -->
+            <div class="col-auto">
+                <div class="btn-group" role="group" aria-label="Colors">
+                    <button type="button" class="btn btn-sm btn-outline-warning" id="headerColorBtn" title="Header Color">
+                        <i class="bi bi-palette"></i> Header
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" id="bgColorBtn" title="Background Color">
+                        <i class="bi bi-palette2"></i> Cell
+                    </button>
+                    <input type="color" id="bgColorPicker" class="d-none">
+                </div>
+            </div>
+            
+            <!-- Formula Operations -->
+            <div class="col-auto">
+                <div class="btn-group" role="group" aria-label="Formula operations">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="columnFormulaBtn" title="Column Formula">
+                        <i class="bi bi-calculator"></i> Col Formula
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="rowFormulaBtn" title="Row Formula">
+                        <i class="bi bi-calculator"></i> Row Formula
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="card-body p-0">
         <div class="table-responsive">
             <!-- Column headers for resizing -->
@@ -44,37 +129,14 @@
                         {% set col_index = loop.index0 %}
                         {% set cell_ref = (65 + col_index)|char ~ (row_index + 2) %}
                         {% set cell_format = format_metadata[cell_ref]|default({}) if format_metadata else {} %}
-                        <td class="sheet-cell {% if cell and cell.startswith('=') %}formula-cell{% endif %}" 
-                            data-row="{{ row_index }}" 
-                            data-col="{{ col_index }}"
-                            {% if cell and cell.startswith('=') %}data-formula="{{ cell }}"{% endif %}
-                            {% if cell_format %}data-format="{{ cell_format|tojson }}"{% endif %}
-                            style="
-                                {% if cell_format.bg_color %}background-color:{{ cell_format.bg_color }};{% endif %}
-                                {% if cell_format.border_style and cell_format.border_style != 'none' %}
-                                border: {{ 
-                                    '1px' if cell_format.border_style == 'thin' else 
-                                    '2px' if cell_format.border_style == 'medium' else 
-                                    '3px' if cell_format.border_style == 'thick' else 
-                                    '1px' 
-                                }} {{ 
-                                    'solid' if cell_format.border_style not in ['dotted', 'dashed', 'double'] else 
-                                    cell_format.border_style 
-                                }} {{ cell_format.border_color|default('#000') }};
-                                {% endif %}
-                            ">
+                        <td class="sheet-cell" data-row="{{ row_index }}" data-col="{{ col_index }}">
                             <div class="editable-cell" contenteditable="true"
-                                style="
-                                    {% if cell_format.font_name %}font-family:{{ cell_format.font_name }};{% endif %}
-                                    {% if cell_format.font_size %}font-size:{{ cell_format.font_size }}px;{% endif %}
-                                    {% if cell_format.font_bold == 'on' %}font-weight:bold;{% endif %}
-                                    {% if cell_format.font_italic == 'on' %}font-style:italic;{% endif %}
-                                    {% if cell_format.font_underline == 'on' %}text-decoration:underline;{% endif %}
-                                    {% if cell_format.font_color %}color:{{ cell_format.font_color }};{% endif %}
-                                    {% if cell_format.align %}text-align:{{ cell_format.align }};{% endif %}
-                                    {% if cell_format.wrap_text == 'on' %}white-space:normal;{% else %}white-space:nowrap;{% endif %}
-                                "
-                            >{{ cell }}</div>
+                                 {% if cell_format %}
+                                 style="{{ cell_format.style|default('') }}"
+                                 class="{{ cell_format.class|default('') }}"
+                                 {% endif %}>
+                                {{ cell }}
+                            </div>
                         </td>
                         {% endfor %}
                     </tr>
@@ -83,1171 +145,36 @@
             </table>
         </div>
     </div>
-    <div class="card-footer bg-light">
-        <div class="d-flex justify-content-between">
-            <div>
-                <span class="text-muted">Last updated: {{ sheet.updated_at.strftime('%Y-%m-%d %H:%M') if sheet.updated_at else 'Never' }}</span>
+</div>
+
+<!-- Formula Input Dialog -->
+<div class="formula-input" id="formulaInput">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Enter Formula</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="formulaInputField" class="form-label">Formula</label>
+                <input type="text" class="form-control" id="formulaInputField" placeholder="e.g. =SUM(A1:A5)">
+                <div class="form-text">Use cell references like A1, B2, etc.</div>
             </div>
-            <div>
-                <button class="btn btn-success btn-sm" id="saveSheetBtn">
-                    <i class="bi bi-save"></i> Save Changes
-                </button>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <button type="button" class="btn btn-secondary" id="cancelFormulaBtn">Cancel</button>
+                <button type="button" class="btn btn-primary" id="applyFormulaBtn">Apply</button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Toast container for notifications -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const sheetTable = document.getElementById('sheetTable');
-    const excelContainer = document.getElementById('excelContainer');
-    const columnHeaders = document.getElementById('columnHeaders');
-    const formatPanel = document.querySelector('.formatting-panel');
-    const toggleFormatButton = document.getElementById('toggleFormatPanel');
-    const addRowBtn = document.getElementById('addRowBtn');
-    const addColumnBtn = document.getElementById('addColumnBtn');
-    const saveSheetBtn = document.getElementById('saveSheetBtn');
-    
-    // Formatting form elements
-    const formatForm = document.getElementById('cellFormatForm');
-    const formatSheetNameInput = document.getElementById('formatSheetName');
-    const formatCellRangeInput = document.getElementById('formatCellRange');
-    const applyFormatBtn = document.getElementById('applyFormat');
-    const cancelFormatBtn = document.getElementById('cancelFormat');
-    
-    // Quick formatting toolbar elements
-    const fontNameSelect = document.getElementById('fontName');
-    const fontSizeSelect = document.getElementById('fontSize');
-    const boldBtn = document.getElementById('boldBtn');
-    const italicBtn = document.getElementById('italicBtn');
-    const underlineBtn = document.getElementById('underlineBtn');
-    const fontColorInput = document.getElementById('fontColor');
-    const bgColorInput = document.getElementById('bgColor');
-    const alignLeftBtn = document.getElementById('alignLeftBtn');
-    const alignCenterBtn = document.getElementById('alignCenterBtn');
-    const alignRightBtn = document.getElementById('alignRightBtn');
-    const borderStyleSelect = document.getElementById('borderStyle');
-    const borderColorInput = document.getElementById('borderColor');
-    const mergeBtn = document.getElementById('mergeBtn');
-    
-    let selectedCells = [];
-    let currentSheetName = '';
-    
-    // Resize tracking variables
-    let isResizingColumn = false;
-    let isResizingRow = false;
-    let resizeStartX = 0;
-    let resizeStartY = 0;
-    let resizeTarget = null;
-    let resizeInitialWidth = 0;
-    let resizeInitialHeight = 0;
-    
-    // Set current sheet name from data attribute
-    if (sheetTable) {
-        currentSheetName = sheetTable.getAttribute('data-sheet-name') || '';
-        console.log("Sheet name from table:", currentSheetName);
-        if (formatSheetNameInput) {
-            formatSheetNameInput.value = currentSheetName;
-        }
-    }
-    
-    // Toggle format panel
-    if (toggleFormatButton) {
-        toggleFormatButton.addEventListener('click', function() {
-            formatPanel.classList.toggle('visible');
-        });
-    }
-    
-    // Cancel formatting
-    if (cancelFormatBtn) {
-        cancelFormatBtn.addEventListener('click', function() {
-            formatPanel.classList.remove('visible');
-        });
-    }
-    
-    // Cell selection
-    if (sheetTable) {
-        sheetTable.addEventListener('click', function(e) {
-            const cell = e.target.closest('.sheet-cell, .sheet-header');
-            if (!cell) return;
-            
-            // Clear previous selections if not holding Ctrl/Cmd key
-            if (!e.ctrlKey && !e.metaKey) {
-                clearCellSelection();
-            }
-            
-            // Add or toggle this cell's selection
-            toggleCellSelection(cell);
-            
-            // Update cell range input for formatting
-            updateCellRangeInput();
-            
-            // Update quick formatting toolbar to reflect selected cell
-            updateToolbarFromSelection();
-        });
-        
-        // Right-click context menu
-        sheetTable.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            const cell = e.target.closest('.sheet-cell, .sheet-header');
-            if (!cell) return;
-            
-            // If cell is not already selected, clear selection and select just this cell
-            if (!cell.classList.contains('selected')) {
-                clearCellSelection();
-                toggleCellSelection(cell);
-                updateCellRangeInput();
-            }
-            
-            // Show context menu
-            showContextMenu(e.clientX, e.clientY);
-        });
-    }
-    
-    // Apply formatting from toolbar
-    if (fontNameSelect) {
-        fontNameSelect.addEventListener('change', function() {
-            applyQuickFormat('fontFamily', this.value);
-        });
-    }
-    
-    if (fontSizeSelect) {
-        fontSizeSelect.addEventListener('change', function() {
-            applyQuickFormat('fontSize', this.value + 'px');
-        });
-    }
-    
-    // Add to the font size select in your edit_sheet.html
-    if (fontSizeSelect) {
-        // Clear existing options
-        while (fontSizeSelect.firstChild) {
-            fontSizeSelect.removeChild(fontSizeSelect.firstChild);
-        }
-        
-        // Add expanded range of sizes
-        [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 48, 56, 64, 72].forEach(size => {
-            const option = document.createElement('option');
-            option.value = size;
-            option.textContent = size;
-            if (size === 11) option.selected = true;
-            fontSizeSelect.appendChild(option);
-        });
-    }
-    
-    if (boldBtn) {
-        boldBtn.addEventListener('click', function() {
-            const isActive = this.classList.contains('active');
-            applyQuickFormat('fontWeight', isActive ? 'normal' : 'bold');
-            this.classList.toggle('active');
-        });
-    }
-    
-    if (italicBtn) {
-        italicBtn.addEventListener('click', function() {
-            const isActive = this.classList.contains('active');
-            applyQuickFormat('fontStyle', isActive ? 'normal' : 'italic');
-            this.classList.toggle('active');
-        });
-    }
-    
-    if (underlineBtn) {
-        underlineBtn.addEventListener('click', function() {
-            const isActive = this.classList.contains('active');
-            applyQuickFormat('textDecoration', isActive ? 'none' : 'underline');
-            this.classList.toggle('active');
-        });
-    }
-    
-    if (fontColorInput) {
-        fontColorInput.addEventListener('input', function() {
-            applyQuickFormat('color', this.value);
-        });
-    }
-    
-    if (bgColorInput) {
-        bgColorInput.addEventListener('input', function() {
-            applyQuickFormat('backgroundColor', this.value, true);
-        });
-    }
-    
-    if (alignLeftBtn) {
-        alignLeftBtn.addEventListener('click', function() {
-            applyQuickFormat('textAlign', 'left');
-            updateAlignButtonStates('left');
-        });
-    }
-    
-    if (alignCenterBtn) {
-        alignCenterBtn.addEventListener('click', function() {
-            applyQuickFormat('textAlign', 'center');
-            updateAlignButtonStates('center');
-        });
-    }
-    
-    if (alignRightBtn) {
-        alignRightBtn.addEventListener('click', function() {
-            applyQuickFormat('textAlign', 'right');
-            updateAlignButtonStates('right');
-        });
-    }
-    
-    // Setup column resizing
-    if (columnHeaders) {
-        columnHeaders.querySelectorAll('.col-resize-handle').forEach(handle => {
-            handle.addEventListener('mousedown', startColumnResize);
-        });
-    }
-    
-    // Add document-level event listeners for resize operations
-    document.addEventListener('mousemove', handleResize);
-    document.addEventListener('mouseup', endResize);
-    
-    // Apply formatting
-    if (applyFormatBtn) {
-        applyFormatBtn.addEventListener('click', function() {
-            if (selectedCells.length === 0) {
-                alert('Please select cells to format');
-                return;
-            }
-            
-            // Get form data
-            const formData = new FormData(formatForm);
-            const formatData = {};
-            for (const [key, value] of formData.entries()) {
-                formatData[key] = value;
-            }
-            
-            // Apply formatting to selected cells
-            applyFormatToSelectedCells(formatData);
-            
-            // Save changes to server (via AJAX)
-            saveFormatChanges(formatData);
-            
-            // Hide format panel
-            formatPanel.classList.remove('visible');
-        });
-    }
-    
-    // Add new row
-    if (addRowBtn) {
-        addRowBtn.addEventListener('click', function() {
-            const tbody = sheetTable.querySelector('tbody');
-            const rowCount = tbody.querySelectorAll('tr').length;
-            const columnCount = sheetTable.querySelector('thead tr').children.length;
-            
-            // Create new row with proper attributes
-            const newRow = document.createElement('tr');
-            newRow.setAttribute('data-row', rowCount);
-            newRow.style.height = '25px';
-            
-            for (let i = 0; i < columnCount; i++) {
-                const cell = document.createElement('td');
-                cell.classList.add('sheet-cell');
-                cell.setAttribute('data-row', rowCount);
-                cell.setAttribute('data-col', i);
-                
-                const editableDiv = document.createElement('div');
-                editableDiv.classList.add('editable-cell');
-                editableDiv.setAttribute('contenteditable', 'true');
-                
-                cell.appendChild(editableDiv);
-                newRow.appendChild(cell);
-                
-                // Apply column formulas if they exist
-                const headerCell = sheetTable.querySelector(`th[data-col="${i}"]`);
-                if (headerCell && headerCell.hasAttribute('data-column-formula')) {
-                    const formula = headerCell.getAttribute('data-column-formula');
-                    if (formula && formula.includes('{n}')) {
-                        const rowNum = rowCount + 2; // +2 for header row + 1-indexing
-                        const cellFormula = formula.replace(/{n}/g, rowNum);
-                        
-                        cell.classList.add('formula-cell');
-                        cell.setAttribute('data-formula', cellFormula);
-                        editableDiv.textContent = cellFormula;
-                    }
-                }
-            }
-            
-            // Append to DOM
-            tbody.appendChild(newRow);
-            
-            // Notify user
-            showToast('Row added successfully', 'success');
-        });
-    }
-    
-    // Add new column
-    if (addColumnBtn) {
-        addColumnBtn.addEventListener('click', function() {
-            const headerRow = sheetTable.querySelector('thead tr');
-            const tbody = sheetTable.querySelector('tbody');
-            const rows = tbody.querySelectorAll('tr');
-            const columnCount = headerRow.children.length;
-            
-            // Add header cell
-            const headerCell = document.createElement('th');
-            headerCell.classList.add('sheet-header');
-            headerCell.setAttribute('data-col', columnCount);
-            headerCell.style.width = '80px';
-            
-            const headerEditableDiv = document.createElement('div');
-            headerEditableDiv.classList.add('editable-cell');
-            headerEditableDiv.setAttribute('contenteditable', 'true');
-            headerEditableDiv.textContent = `Column ${columnCount + 1}`;
-            
-            headerCell.appendChild(headerEditableDiv);
-            headerRow.appendChild(headerCell);
-            
-            // Add column header for resizing
-            const columnHeader = document.createElement('div');
-            columnHeader.classList.add('excel-column-header');
-            columnHeader.setAttribute('data-col', columnCount);
-            columnHeader.textContent = getColumnLetter(columnCount);
-            
-            const resizeHandle = document.createElement('div');
-            resizeHandle.classList.add('col-resize-handle');
-            resizeHandle.setAttribute('data-col', columnCount);
-            resizeHandle.addEventListener('mousedown', startColumnResize);
-            
-            columnHeader.appendChild(resizeHandle);
-            columnHeaders.appendChild(columnHeader);
-            
-            // Add cell to each row
-            rows.forEach((row, rowIndex) => {
-                const cell = document.createElement('td');
-                cell.classList.add('sheet-cell');
-                cell.setAttribute('data-row', rowIndex);
-                cell.setAttribute('data-col', columnCount);
-                
-                const editableDiv = document.createElement('div');
-                editableDiv.classList.add('editable-cell');
-                editableDiv.setAttribute('contenteditable', 'true');
-                
-                cell.appendChild(editableDiv);
-                row.appendChild(cell);
-            });
-        });
-    }
-    
-    // Save sheet changes
-    if (saveSheetBtn) {
-        saveSheetBtn.addEventListener('click', function() {
-            saveSheetData();
-        });
-    }
-    
-    // Formula cell detection
-    document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('editable-cell')) {
-            const content = e.target.textContent.trim();
-            const cell = e.target.closest('.sheet-cell');
-            
-            if (cell && content.startsWith('=')) {
-                cell.classList.add('formula-cell');
-                cell.setAttribute('data-formula', content);
-                // Store formula in data attribute for export
-            } else if (cell) {
-                cell.classList.remove('formula-cell');
-                cell.removeAttribute('data-formula');
-            }
-        }
+    // Initialize sheet editor
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tooltip initialization
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
     });
-    
-    // Functions for column resizing
-    function startColumnResize(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        isResizingColumn = true;
-        resizeStartX = e.clientX;
-        
-        // The column index is in the data-col attribute
-        const columnIndex = parseInt(this.getAttribute('data-col'));
-        
-        // Find the header cell for this column
-        const headerCell = sheetTable.querySelector(`th[data-col="${columnIndex}"]`);
-        resizeTarget = headerCell;
-        resizeInitialWidth = resizeTarget.offsetWidth;
-        
-        // Show resize guide
-        const resizeGuide = document.createElement('div');
-        resizeGuide.id = 'resize-guide';
-        resizeGuide.style.position = 'absolute';
-        resizeGuide.style.top = '0';
-        resizeGuide.style.bottom = '0';
-        resizeGuide.style.width = '1px';
-        resizeGuide.style.backgroundColor = '#1a73e8';
-        resizeGuide.style.zIndex = '1000';
-        resizeGuide.style.left = (e.clientX) + 'px';
-        document.body.appendChild(resizeGuide);
-        
-        document.body.style.cursor = 'col-resize';
-        document.body.classList.add('resizing');
-    }
-
-    function handleResize(e) {
-        if (isResizingColumn && resizeTarget) {
-            const diffX = e.clientX - resizeStartX;
-            const newWidth = Math.max(30, resizeInitialWidth + diffX); // Minimum width of 30px
-            
-            // Update resize guide position
-            const resizeGuide = document.getElementById('resize-guide');
-            if (resizeGuide) {
-                resizeGuide.style.left = (e.clientX) + 'px';
-            }
-            
-            // Update the width of the header cell during drag
-            resizeTarget.style.width = newWidth + 'px';
-            
-            // Update the width of the corresponding column header
-            const columnIndex = resizeTarget.getAttribute('data-col');
-            const columnHeader = columnHeaders.querySelector(`.excel-column-header[data-col="${columnIndex}"]`);
-            if (columnHeader) {
-                columnHeader.style.width = newWidth + 'px';
-                columnHeader.style.flexBasis = newWidth + 'px';
-            }
-        }
-        
-        if (isResizingRow && resizeTarget) {
-            const diffY = e.clientY - resizeStartY;
-            const newHeight = Math.max(18, resizeInitialHeight + diffY); // Minimum height
-            
-            // Update resize guide position
-            const resizeGuide = document.getElementById('resize-guide');
-            if (resizeGuide) {
-                resizeGuide.style.top = (e.clientY) + 'px';
-            }
-            
-            // Update the height of the row
-            resizeTarget.style.height = newHeight + 'px';
-        }
-    }
-
-    function endResize() {
-        if (isResizingColumn || isResizingRow) {
-            isResizingColumn = false;
-            isResizingRow = false;
-            resizeTarget = null;
-            document.body.style.cursor = '';
-            document.body.classList.remove('resizing');
-            
-            // Remove resize guide
-            const resizeGuide = document.getElementById('resize-guide');
-            if (resizeGuide) {
-                document.body.removeChild(resizeGuide);
-            }
-            
-            // Save column and row dimensions to server
-            saveDimensions();
-        }
-    }
-    
-    function saveDimensions() {
-        // Gather all column widths
-        const columnWidths = {};
-        sheetTable.querySelectorAll('th.sheet-header').forEach(header => {
-            const colIndex = header.getAttribute('data-col');
-            const width = header.style.width;
-            if (width) {
-                columnWidths[colIndex] = parseInt(width);
-            }
-        });
-        
-        // Gather all row heights
-        const rowHeights = {};
-        sheetTable.querySelectorAll('tbody tr').forEach(row => {
-            const rowIndex = row.getAttribute('data-row');
-            const height = row.style.height;
-            if (height) {
-                rowHeights[rowIndex] = parseInt(height);
-            }
-        });
-        
-        // Send to server
-        fetch('/update_sheet_dimensions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
-            body: JSON.stringify({
-                sheet_name: currentSheetName,
-                column_widths: columnWidths,
-                row_heights: rowHeights
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log('Dimensions saved');
-            } else {
-                console.error('Error saving dimensions:', data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-    }
-    
-    // Helper function to convert column index to letter (0=A, 1=B, etc.)
-    function getColumnLetter(index) {
-        let letter = '';
-        while (index >= 0) {
-            letter = String.fromCharCode(65 + (index % 26)) + letter;
-            index = Math.floor(index / 26) - 1;
-            if (index < 0) break;
-        }
-        return letter;
-    }
-    
-    // Context menu for right-click
-    function showContextMenu(x, y) {
-        // Remove any existing context menu
-        const existingMenu = document.querySelector('.excel-context-menu');
-        if (existingMenu) {
-            document.body.removeChild(existingMenu);
-        }
-        
-        // Create new context menu
-        const menu = document.createElement('div');
-        menu.classList.add('excel-context-menu');
-        menu.style.left = x + 'px';
-        menu.style.top = y + 'px';
-        
-        // Menu items
-        const insertRowAction = document.createElement('div');
-        insertRowAction.classList.add('excel-context-menu-item');
-        insertRowAction.textContent = 'Insert Row';
-        insertRowAction.addEventListener('click', () => {
-            // Implementation for insert row at selection
-            addRowBtn.click();
-            hideContextMenu();
-        });
-        
-        const insertColAction = document.createElement('div');
-        insertColAction.classList.add('excel-context-menu-item');
-        insertColAction.textContent = 'Insert Column';
-        insertColAction.addEventListener('click', () => {
-            // Implementation for insert column at selection
-            addColumnBtn.click();
-            hideContextMenu();
-        });
-        
-        const separator = document.createElement('div');
-        separator.classList.add('excel-context-menu-separator');
-        
-        const formatCellsAction = document.createElement('div');
-        formatCellsAction.classList.add('excel-context-menu-item');
-        formatCellsAction.textContent = 'Format Cells';
-        formatCellsAction.addEventListener('click', () => {
-            // Show format panel
-            formatPanel.classList.add('visible');
-            hideContextMenu();
-        });
-        
-        menu.appendChild(insertRowAction);
-        menu.appendChild(insertColAction);
-        menu.appendChild(separator);
-        menu.appendChild(formatCellsAction);
-        
-        const isHeaderSelected = selectedCells.some(cell => cell.classList.contains('sheet-header'));
-        
-        if (isHeaderSelected) {
-            // Add header-specific menu items
-            const changeHeaderColorAction = document.createElement('div');
-            changeHeaderColorAction.classList.add('excel-context-menu-item');
-            changeHeaderColorAction.textContent = 'Change Header Color';
-            changeHeaderColorAction.addEventListener('click', () => {
-                const color = prompt('Enter header background color (hex, rgb, or name):', '#F0E68C');
-                if (color) {
-                    selectedCells.forEach(cell => {
-                        if (cell.classList.contains('sheet-header')) {
-                            const editableDiv = cell.querySelector('.editable-cell');
-                            if (editableDiv) {
-                                editableDiv.style.backgroundColor = color;
-                            }
-                        }
-                    });
-                    saveFormatChanges({header_bg_color: color});
-                }
-                hideContextMenu();
-            });
-            
-            const removeHeaderAction = document.createElement('div');
-            removeHeaderAction.classList.add('excel-context-menu-item');
-            removeHeaderAction.textContent = 'Remove Header';
-            removeHeaderAction.addEventListener('click', () => {
-                removeHeader();
-                hideContextMenu();
-            });
-            
-            menu.appendChild(document.createElement('div')).classList.add('excel-context-menu-separator');
-            menu.appendChild(changeHeaderColorAction);
-            menu.appendChild(removeHeaderAction);
-        }
-        
-        // Add option to add header always
-        const addHeaderAction = document.createElement('div');
-        addHeaderAction.classList.add('excel-context-menu-item');
-        addHeaderAction.textContent = 'Add Header';
-        addHeaderAction.addEventListener('click', () => {
-            addHeader();
-            hideContextMenu();
-        });
-        
-        menu.appendChild(addHeaderAction);
-        
-        document.body.appendChild(menu);
-        
-        // Hide when clicking elsewhere
-        document.addEventListener('click', hideContextMenu);
-    }
-    
-    function hideContextMenu() {
-        const menu = document.querySelector('.excel-context-menu');
-        if (menu) {
-            document.body.removeChild(menu);
-            document.removeEventListener('click', hideContextMenu);
-        }
-    }
-    
-    // Apply formatting via quick toolbar
-    function applyQuickFormat(property, value, isParentStyle = false) {
-        if (selectedCells.length === 0) return;
-        
-        selectedCells.forEach(cell => {
-            const target = isParentStyle ? cell : cell.querySelector('.editable-cell');
-            if (target) {
-                target.style[property] = value;
-            }
-        });
-        
-        // Save this format change
-        const formatData = {};
-        if (property === 'fontFamily') formatData.font_name = value;
-        if (property === 'fontSize') formatData.font_size = value.replace('px', '');
-        if (property === 'fontWeight') formatData.font_bold = value === 'bold' ? 'on' : 'off';
-        if (property === 'fontStyle') formatData.font_italic = value === 'italic' ? 'on' : 'off';
-        if (property === 'textDecoration') formatData.font_underline = value === 'underline' ? 'on' : 'off';
-        if (property === 'color') formatData.font_color = value;
-        if (property === 'backgroundColor') formatData.bg_color = value;
-        if (property === 'textAlign') formatData.align = value;
-        
-        saveFormatChanges(formatData);
-    }
-    
-    function updateAlignButtonStates(alignment) {
-        alignLeftBtn.classList.toggle('active', alignment === 'left');
-        alignCenterBtn.classList.toggle('active', alignment === 'center');
-        alignRightBtn.classList.toggle('active', alignment === 'right');
-    }
-    
-    function updateToolbarFromSelection() {
-        if (selectedCells.length !== 1) return; // Only update for single cell selection
-        
-        const cell = selectedCells[0];
-        const editableDiv = cell.querySelector('.editable-cell');
-        if (!editableDiv) return;
-        
-        const style = window.getComputedStyle(editableDiv);
-        
-        // Update font family
-        const fontFamily = style.fontFamily.split(',')[0].replace(/['"]/g, '');
-        if (fontNameSelect && fontNameSelect.querySelector(`option[value="${fontFamily}"]`)) {
-            fontNameSelect.value = fontFamily;
-        }
-        
-        // Update font size
-        const fontSize = parseInt(style.fontSize);
-        if (fontSizeSelect && fontSizeSelect.querySelector(`option[value="${fontSize}"]`)) {
-            fontSizeSelect.value = fontSize.toString();
-        }
-        
-        // Update bold button
-        if (boldBtn) {
-            boldBtn.classList.toggle('active', style.fontWeight >= 600 || style.fontWeight === 'bold');
-        }
-        
-        // Update italic button
-        if (italicBtn) {
-            italicBtn.classList.toggle('active', style.fontStyle === 'italic');
-        }
-        
-        // Update underline button
-        if (underlineBtn) {
-            underlineBtn.classList.toggle('active', style.textDecoration.includes('underline'));
-        }
-        
-        // Update font color
-        if (fontColorInput) {
-            // Convert RGB to hex
-            const color = style.color.match(/\d+/g);
-            if (color && color.length === 3) {
-                const hex = '#' + color.map(c => {
-                    const hex = parseInt(c).toString(16);
-                    return hex.length === 1 ? '0' + hex : hex;
-                }).join('');
-                fontColorInput.value = hex;
-            }
-        }
-        
-        // Update bg color
-        if (bgColorInput && cell.style.backgroundColor) {
-            // Get background color from cell, not editable div
-            const color = cell.style.backgroundColor.match(/\d+/g);
-            if (color && color.length === 3) {
-                const hex = '#' + color.map(c => {
-                    const hex = parseInt(c).toString(16);
-                    return hex.length === 1 ? '0' + hex : hex;
-                }).join('');
-                bgColorInput.value = hex;
-            }
-        }
-        
-        // Update alignment buttons
-        updateAlignButtonStates(style.textAlign);
-    }
-    
-    // Helper functions
-    function clearCellSelection() {
-        selectedCells.forEach(cell => {
-            cell.classList.remove('selected');
-        });
-        selectedCells = [];
-    }
-    
-    function toggleCellSelection(cell) {
-        const index = selectedCells.indexOf(cell);
-        if (index > -1) {
-            cell.classList.remove('selected');
-            selectedCells.splice(index, 1);
-        } else {
-            cell.classList.add('selected');
-            selectedCells.push(cell);
-        }
-    }
-    
-    function updateCellRangeInput() {
-        if (!formatCellRangeInput) return;
-        
-        if (selectedCells.length === 0) {
-            formatCellRangeInput.value = '';
-            return;
-        }
-        
-        // Create range notation (e.g., "A1:B3")
-        const ranges = selectedCells.map(cell => {
-            // Handle both regular cells and header cells
-            const isHeader = cell.classList.contains('sheet-header');
-            const row = isHeader ? 1 : parseInt(cell.getAttribute('data-row')) + 2; // +2 for header row + 1-indexing
-            const col = parseInt(cell.getAttribute('data-col'));
-            const colLetter = getColumnLetter(col);
-            return `${colLetter}${row}`;
-        });
-        
-        formatCellRangeInput.value = ranges.join(',');
-    }
-    
-    function applyFormatToSelectedCells(formatData) {
-        selectedCells.forEach(cell => {
-            const editableDiv = cell.querySelector('.editable-cell');
-            if (!editableDiv) return;
-            
-            // Apply font formatting
-            if (formatData.font_name) {
-                editableDiv.style.fontFamily = formatData.font_name;
-            }
-            
-            if (formatData.font_size) {
-                editableDiv.style.fontSize = `${formatData.font_size}px`;
-            }
-            
-            if (formatData.font_bold === 'on') {
-                editableDiv.style.fontWeight = 'bold';
-            } else {
-                editableDiv.style.fontWeight = 'normal';
-            }
-            
-            if (formatData.font_italic === 'on') {
-                editableDiv.style.fontStyle = 'italic';
-            } else {
-                editableDiv.style.fontStyle = 'normal';
-            }
-            
-            if (formatData.font_underline === 'on') {
-                editableDiv.style.textDecoration = 'underline';
-            } else {
-                editableDiv.style.textDecoration = 'none';
-            }
-            
-            if (formatData.font_color) {
-                editableDiv.style.color = formatData.font_color;
-            }
-            
-            // Apply cell formatting
-            if (formatData.bg_color) {
-                cell.style.backgroundColor = formatData.bg_color;
-            }
-            
-            if (formatData.align) {
-                editableDiv.style.textAlign = formatData.align;
-            }
-            
-            // Apply border
-            if (formatData.border_style && formatData.border_style !== 'none') {
-                let borderStyle;
-                switch(formatData.border_style) {
-                    case 'thin': borderStyle = '1px solid'; break;
-                    case 'medium': borderStyle = '2px solid'; break;
-                    case 'thick': borderStyle = '3px solid'; break;
-                    case 'dotted': borderStyle = '1px dotted'; break;
-                    case 'dashed': borderStyle = '1px dashed'; break;
-                    case 'double': borderStyle = '3px double'; break;
-                    default: borderStyle = '1px solid';
-                }
-                
-                cell.style.border = borderStyle + ' ' + (formatData.border_color || '#000000');
-            } else {
-                cell.style.border = ''; // Reset border
-            }
-            
-            // Apply wrap text
-            if (formatData.wrap_text === 'on') {
-                editableDiv.style.whiteSpace = 'normal';
-            } else {
-                editableDiv.style.whiteSpace = 'nowrap';
-            }
-            
-            // Store formatting attributes for export
-            cell.setAttribute('data-format', JSON.stringify(formatData));
-        });
-    }
-    
-    function saveFormatChanges(formatData) {
-        if (selectedCells.length === 0) return;
-        
-        // Create cell references for all selected cells
-        const cellRefs = selectedCells.map(cell => {
-            // Handle both regular cells and header cells
-            const isHeader = cell.classList.contains('sheet-header');
-            const row = isHeader ? 1 : parseInt(cell.getAttribute('data-row')) + 2; // +2 for header row + 1-indexing
-            const col = parseInt(cell.getAttribute('data-col'));
-            const colLetter = getColumnLetter(col);
-            return `${colLetter}${row}`;
-        }).join(',');
-        
-        fetch('/update_cell_format', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
-            body: JSON.stringify({
-                sheet_name: currentSheetName,
-                cell_range: cellRefs,
-                format_data: formatData
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('Format applied successfully', 'success');
-            } else {
-                showToast('Error applying format: ' + data.error, 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Error saving format changes', 'error');
-        });
-    }
-    
-    function saveSheetData() {
-        // Make sure we have the sheet name
-        if (!currentSheetName) {
-            showToast('Error: Sheet name not found', 'error');
-            console.error('Missing sheet name - data-sheet-name attribute not found on table');
-            return;
-        }
-        
-        // Extract all data from the table
-        const headers = [];
-        const headerCells = sheetTable.querySelectorAll('thead th .editable-cell');
-        headerCells.forEach(cell => {
-            headers.push(cell.textContent.trim());
-        });
-        
-        const rows = [];
-        const tableRows = sheetTable.querySelectorAll('tbody tr');
-        tableRows.forEach(row => {
-            const rowData = [];
-            const cells = row.querySelectorAll('.editable-cell');
-            cells.forEach(cell => {
-                // Get cell content, considering formulas
-                let cellContent = cell.textContent.trim();
-                const parentCell = cell.closest('.sheet-cell');
-                if (parentCell && parentCell.classList.contains('formula-cell')) {
-                    cellContent = parentCell.getAttribute('data-formula') || cellContent;
-                }
-                rowData.push(cellContent);
-            });
-            rows.push(rowData);
-        });
-        
-        const sheetData = [headers, ...rows];
-        
-        // Collect cell dimensions
-        const columnWidths = {};
-        sheetTable.querySelectorAll('thead th').forEach(header => {
-            const colIndex = header.getAttribute('data-col');
-            const width = header.style.width;
-            if (width) {
-                columnWidths[colIndex] = parseInt(width);
-            }
-        });
-        
-        const rowHeights = {};
-        sheetTable.querySelectorAll('tbody tr').forEach(row => {
-            const rowIndex = row.getAttribute('data-row');
-            const height = row.style.height;
-            if (height) {
-                rowHeights[rowIndex] = parseInt(height);
-            }
-        });
-        
-        // Send data to server
-        fetch('/save_sheet_data', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
-            body: JSON.stringify({
-                sheet_name: currentSheetName,
-                data: sheetData,
-                dimensions: {
-                    column_widths: columnWidths,
-                    row_heights: rowHeights
-                }
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('Sheet saved successfully', 'success');
-            } else {
-                showToast('Error saving sheet: ' + data.error, 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Error saving sheet', 'error');
-        });
-    }
-    
-    function getCsrfToken() {
-        const meta = document.querySelector('meta[name="csrf-token"]');
-        return meta ? meta.getAttribute('content') : '';
-    }
-    
-    function showToast(message, type) {
-        // Remove existing toasts
-        const existingToasts = document.querySelectorAll('.excel-toast');
-        existingToasts.forEach(t => t.remove());
-        
-        const toast = document.createElement('div');
-        toast.classList.add('excel-toast');
-        toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.right = '20px';
-        toast.style.maxWidth = '300px';  // Limit width
-        toast.style.backgroundColor = type === 'success' ? '#d4edda' : '#f8d7da';
-        toast.style.color = type === 'success' ? '#155724' : '#721c24';
-        toast.style.padding = '10px 15px';  // Smaller padding
-        toast.style.borderRadius = '4px';
-        toast.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-        toast.style.zIndex = '9999';
-        toast.style.fontSize = '14px';  // Smaller font size
-        toast.style.opacity = '0.9';   // Slightly transparent
-        
-        // Add close button
-        toast.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center">
-                <span>${message}</span>
-                <button style="background: none; border: none; cursor: pointer; font-size: 16px; margin-left: 10px;">&times;</button>
-            </div>
-        `;
-        
-        // Add click handler for close button
-        const closeBtn = toast.querySelector('button');
-        closeBtn.addEventListener('click', () => {
-            document.body.removeChild(toast);
-        });
-        
-        document.body.appendChild(toast);
-        
-        // Auto-hide after 2 seconds
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.5s';
-            setTimeout(() => {
-                if (document.body.contains(toast)) {
-                    document.body.removeChild(toast);
-                }
-            }, 500);
-        }, 2000);
-    }
-    
-    // Add this to your sheet_editor.html script section
-    function applyColumnFormula() {
-        const selectedHeader = selectedCells.find(cell => cell.classList.contains('sheet-header'));
-        if (!selectedHeader) {
-            showToast('Please select a header cell first', 'error');
-            return;
-        }
-        
-        // Get formula from user
-        const formula = prompt('Enter a formula template (use {n} for row number):\nExample: =SUM(A{n}:B{n})');
-        if (!formula || !formula.startsWith('=')) return;
-        
-        // Get column index
-        const columnIndex = parseInt(selectedHeader.getAttribute('data-col'));
-        
-        // Apply to all cells in the column
-        const tbody = sheetTable.querySelector('tbody');
-        const rows = tbody.querySelectorAll('tr');
-        
-        rows.forEach((row, rowIndex) => {
-            const cell = row.querySelector(`.sheet-cell[data-col="${columnIndex}"]`);
-            if (cell) {
-                const rowNum = rowIndex + 2; // +2 because data starts at row 2 (after header)
-                const cellFormula = formula.replace(/{n}/g, rowNum);
-                
-                cell.classList.add('formula-cell');
-                cell.setAttribute('data-formula', cellFormula);
-                
-                // Update cell display
-                const editableDiv = cell.querySelector('.editable-cell');
-                if (editableDiv) {
-                    editableDiv.textContent = cellFormula;
-                }
-            }
-        });
-        
-        showToast('Formula applied to entire column', 'success');
-    }
-    
-    function addHeader() {
-        // Get the last column index
-        const headerRow = sheetTable.querySelector('thead tr');
-        const lastColumnIndex = headerRow.children.length;
-        
-        // Create new header cell
-        const newHeader = document.createElement('th');
-        newHeader.classList.add('sheet-header');
-        newHeader.setAttribute('data-col', lastColumnIndex);
-        newHeader.style.width = '80px';
-        
-        // Create editable div for header
-        const headerEditableDiv = document.createElement('div');
-        headerEditableDiv.classList.add('editable-cell');
-        headerEditableDiv.setAttribute('contenteditable', 'true');
-        headerEditableDiv.textContent = `Header ${lastColumnIndex + 1}`;
-        
-        // Add to DOM
-        newHeader.appendChild(headerEditableDiv);
-        headerRow.appendChild(newHeader);
-        
-        // Add column header for resizing
-        const columnHeader = document.createElement('div');
-        columnHeader.classList.add('excel-column-header');
-        columnHeader.setAttribute('data-col', lastColumnIndex);
-        columnHeader.textContent = getColumnLetter(lastColumnIndex);
-        
-        const resizeHandle = document.createElement('div');
-        resizeHandle.classList.add('col-resize-handle');
-        resizeHandle.setAttribute('data-col', lastColumnIndex);
-        resizeHandle.addEventListener('mousedown', startColumnResize);
-        
-        columnHeader.appendChild(resizeHandle);
-        columnHeaders.appendChild(columnHeader);
-        
-        // Add cells to each row
-        const rows = sheetTable.querySelectorAll('tbody tr');
-        rows.forEach((row, rowIndex) => {
-            const cell = document.createElement('td');
-            cell.classList.add('sheet-cell');
-            cell.setAttribute('data-row', rowIndex);
-            cell.setAttribute('data-col', lastColumnIndex);
-            
-            const cellEditableDiv = document.createElement('div');
-            cellEditableDiv.classList.add('editable-cell');
-            cellEditableDiv.setAttribute('contenteditable', 'true');
-            
-            cell.appendChild(cellEditableDiv);
-            row.appendChild(cell);
-        });
-    }
-    
-    function removeHeader() {
-        const selectedHeader = selectedCells.find(cell => cell.classList.contains('sheet-header'));
-        if (!selectedHeader) {
-            showToast('Please select a header to remove', 'error');
-            return;
-        }
-        
-        const columnIndex = parseInt(selectedHeader.getAttribute('data-col'));
-        
-        // Remove header cell
-        selectedHeader.remove();
-        
-        // Remove column header
-        const columnHeader = columnHeaders.querySelector(`.excel-column-header[data-col="${columnIndex}"]`);
-        if (columnHeader) columnHeader.remove();
-        
-        // Remove all cells in this column
-        const cells = sheetTable.querySelectorAll(`td[data-col="${columnIndex}"]`);
-        cells.forEach(cell => cell.remove());
-        
-        // Reindex remaining columns
-        reindexColumns(columnIndex);
-        
-        // Clear selection
-        clearCellSelection();
-    }
-    
-    function reindexColumns(startIndex) {
-        // Reindex header cells
-        const headerCells = sheetTable.querySelectorAll('th.sheet-header');
-        headerCells.forEach(header => {
-            const colIndex = parseInt(header.getAttribute('data-col'));
-            if (colIndex > startIndex) {
-                header.setAttribute('data-col', colIndex - 1);
-            }
-        });
-        
-        // Reindex column headers
-        const colHeaders = columnHeaders.querySelectorAll('.excel-column-header');
-        colHeaders.forEach(colHeader => {
-            const colIndex = parseInt(colHeader.getAttribute('data-col'));
-            if (colIndex > startIndex) {
-                colHeader.setAttribute('data-col', colIndex - 1);
-                colHeader.textContent = getColumnLetter(colIndex - 1);
-                const resizeHandle = colHeader.querySelector('.col-resize-handle');
-                if (resizeHandle) {
-                    resizeHandle.setAttribute('data-col', colIndex - 1);
-                }
-            }
-        });
-        
-        // Reindex cells
-        const cells = sheetTable.querySelectorAll('td.sheet-cell');
-        cells.forEach(cell => {
-            const colIndex = parseInt(cell.getAttribute('data-col'));
-            if (colIndex > startIndex) {
-                cell.setAttribute('data-col', colIndex - 1);
-            }
-        });
-    }
-});
 </script>

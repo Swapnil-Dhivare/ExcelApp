@@ -1,26 +1,75 @@
 <div class="card mb-3 formatting-panel">
-    <div class="card-header bg-light">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Cell Formatting</h5>
+        <button type="button" class="btn-close" id="closeFormatPanel" aria-label="Close"></button>
     </div>
     <div class="card-body">
         <form id="cellFormatForm">
             <input type="hidden" id="formatSheetName" name="sheet_name" value="{{ sheet.sheet_name }}">
             <input type="hidden" id="formatCellRange" name="cell_range">
             
+            <!-- Quick Format Toolbar -->
+            <div class="mb-3 border-bottom pb-2">
+                <div class="btn-toolbar" role="toolbar">
+                    <div class="btn-group me-2 mb-1" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="boldBtn" title="Bold">
+                            <i class="bi bi-type-bold"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="italicBtn" title="Italic">
+                            <i class="bi bi-type-italic"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="underlineBtn" title="Underline">
+                            <i class="bi bi-type-underline"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="btn-group me-2 mb-1" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="alignLeftBtn" title="Align Left">
+                            <i class="bi bi-text-left"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="alignCenterBtn" title="Align Center">
+                            <i class="bi bi-text-center"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="alignRightBtn" title="Align Right">
+                            <i class="bi bi-text-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="btn-group mb-1" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="Cell Borders">
+                            <i class="bi bi-border-all"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><button type="button" class="dropdown-item" id="borderAllBtn"><i class="bi bi-border-all me-2"></i>All Borders</button></li>
+                            <li><button type="button" class="dropdown-item" id="borderOutlineBtn"><i class="bi bi-border-outer me-2"></i>Outside Borders</button></li>
+                            <li><button type="button" class="dropdown-item" id="borderNoneBtn"><i class="bi bi-border-clear me-2"></i>No Border</button></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item" id="borderTopBtn"><i class="bi bi-border-top me-2"></i>Top Border</button></li>
+                            <li><button type="button" class="dropdown-item" id="borderRightBtn"><i class="bi bi-border-right me-2"></i>Right Border</button></li>
+                            <li><button type="button" class="dropdown-item" id="borderBottomBtn"><i class="bi bi-border-bottom me-2"></i>Bottom Border</button></li>
+                            <li><button type="button" class="dropdown-item" id="borderLeftBtn"><i class="bi bi-border-left me-2"></i>Left Border</button></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
             <div class="row mb-2">
                 <div class="col-md-6">
                     <label class="form-label">Font</label>
-                    <select class="form-select" id="fontName" name="font_name">
+                    <select class="form-select" id="fontName" name="font_name" data-preview="true">
                         <option value="Arial">Arial</option>
                         <option value="Calibri">Calibri</option>
                         <option value="Times New Roman">Times New Roman</option>
                         <option value="Courier New">Courier New</option>
                         <option value="Verdana">Verdana</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Tahoma">Tahoma</option>
+                        <option value="Segoe UI">Segoe UI</option>
                     </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Size</label>
-                    <select class="form-select" id="fontSize" name="font_size">
+                    <select class="form-select" id="fontSize" name="font_size" data-preview="true">
                         <option value="8">8</option>
                         <option value="9">9</option>
                         <option value="10">10</option>
@@ -36,11 +85,6 @@
                         <option value="28">28</option>
                         <option value="32">32</option>
                         <option value="36">36</option>
-                        <option value="40">40</option>
-                        <option value="48">48</option>
-                        <option value="56">56</option>
-                        <option value="64">64</option>
-                        <option value="72">72</option>
                     </select>
                 </div>
             </div>
@@ -49,40 +93,58 @@
                 <div class="col-md-6">
                     <div class="d-flex align-items-center">
                         <div class="form-check me-3">
-                            <input class="form-check-input" type="checkbox" id="fontBold" name="font_bold">
+                            <input class="form-check-input" type="checkbox" id="fontBold" name="font_bold" data-preview="true">
                             <label class="form-check-label" for="fontBold"><i class="bi bi-type-bold"></i></label>
                         </div>
                         <div class="form-check me-3">
-                            <input class="form-check-input" type="checkbox" id="fontItalic" name="font_italic">
+                            <input class="form-check-input" type="checkbox" id="fontItalic" name="font_italic" data-preview="true">
                             <label class="form-check-label" for="fontItalic"><i class="bi bi-type-italic"></i></label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="fontUnderline" name="font_underline">
+                            <input class="form-check-input" type="checkbox" id="fontUnderline" name="font_underline" data-preview="true">
                             <label class="form-check-label" for="fontUnderline"><i class="bi bi-type-underline"></i></label>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Color</label>
-                    <input type="color" class="form-control form-control-color" id="fontColor" name="font_color" value="#000000">
+                    <label class="form-label">Text Color</label>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center" type="button" id="textColorDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="color-preview me-2" id="textColorPreview" style="background-color: #000000;"></span>
+                            <span>Text Color</span>
+                        </button>
+                        <div class="dropdown-menu p-2 color-palette-dropdown" aria-labelledby="textColorDropdown">
+                            <!-- Color palette will be dynamically generated by JavaScript -->
+                            <input type="hidden" id="font_color" name="font_color" value="#000000" data-preview="true">
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <div class="row mb-2">
                 <div class="col-md-6">
                     <label class="form-label">Fill Color</label>
-                    <input type="color" class="form-control form-control-color" id="bgColor" name="bg_color" value="#FFFFFF">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center" type="button" id="fillColorDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="color-preview me-2" id="fillColorPreview" style="background-color: #FFFFFF;"></span>
+                            <span>Fill Color</span>
+                        </button>
+                        <div class="dropdown-menu p-2 color-palette-dropdown" aria-labelledby="fillColorDropdown">
+                            <!-- Color palette will be dynamically generated by JavaScript -->
+                            <input type="hidden" id="cell_bg_color" name="bg_color" value="#FFFFFF" data-preview="true">
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Alignment</label>
                     <div class="btn-group w-100" role="group">
-                        <input type="radio" class="btn-check" name="align" id="alignLeft" value="left" checked>
+                        <input type="radio" class="btn-check" name="cell_alignment" id="alignLeft" value="left" checked data-preview="true">
                         <label class="btn btn-outline-secondary" for="alignLeft"><i class="bi bi-text-left"></i></label>
                         
-                        <input type="radio" class="btn-check" name="align" id="alignCenter" value="center">
+                        <input type="radio" class="btn-check" name="cell_alignment" id="alignCenter" value="center" data-preview="true">
                         <label class="btn btn-outline-secondary" for="alignCenter"><i class="bi bi-text-center"></i></label>
                         
-                        <input type="radio" class="btn-check" name="align" id="alignRight" value="right">
+                        <input type="radio" class="btn-check" name="cell_alignment" id="alignRight" value="right" data-preview="true">
                         <label class="btn btn-outline-secondary" for="alignRight"><i class="bi bi-text-right"></i></label>
                     </div>
                 </div>
@@ -90,8 +152,37 @@
             
             <div class="row mb-2">
                 <div class="col-md-6">
-                    <label class="form-label">Border</label>
-                    <select class="form-select" id="borderStyle" name="border_style">
+                    <label class="form-label">Vertical Alignment</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="vertical_alignment" id="alignTop" value="top" data-preview="true">
+                        <label class="btn btn-outline-secondary" for="alignTop"><i class="bi bi-align-top"></i></label>
+                        
+                        <input type="radio" class="btn-check" name="vertical_alignment" id="alignMiddle" value="middle" checked data-preview="true">
+                        <label class="btn btn-outline-secondary" for="alignMiddle"><i class="bi bi-align-middle"></i></label>
+                        
+                        <input type="radio" class="btn-check" name="vertical_alignment" id="alignBottom" value="bottom" data-preview="true">
+                        <label class="btn btn-outline-secondary" for="alignBottom"><i class="bi bi-align-bottom"></i></label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Borders</label>
+                    <div class="d-flex align-items-center">
+                        <div class="form-check me-3">
+                            <input class="form-check-input" type="checkbox" id="all_borders" name="all_borders" data-preview="true">
+                            <label class="form-check-label" for="all_borders"><i class="bi bi-border-all"></i> All</label>
+                        </div>
+                        <div class="form-check me-3">
+                            <input class="form-check-input" type="checkbox" id="outlineBorders" name="outline_borders" data-preview="true">
+                            <label class="form-check-label" for="outlineBorders"><i class="bi bi-border-outer"></i> Outline</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <label class="form-label">Border Style</label>
+                    <select class="form-select" id="borderStyle" name="border_style" data-preview="true">
                         <option value="none">None</option>
                         <option value="thin">Thin</option>
                         <option value="medium">Medium</option>
@@ -103,27 +194,52 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Border Color</label>
-                    <input type="color" class="form-control form-control-color" id="borderColor" name="border_color" value="#000000">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle w-100 d-flex align-items-center" type="button" id="borderColorDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="color-preview me-2" id="borderColorPreview" style="background-color: #000000;"></span>
+                            <span>Border Color</span>
+                        </button>
+                        <div class="dropdown-menu p-2 color-palette-dropdown" aria-labelledby="borderColorDropdown">
+                            <!-- Color palette will be dynamically generated by JavaScript -->
+                            <input type="hidden" id="border_color" name="border_color" value="#000000" data-preview="true">
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <div class="row mb-2">
                 <div class="col-md-6">
                     <label class="form-label">Number Format</label>
-                    <select class="form-select" id="numberFormat" name="number_format">
+                    <select class="form-select" id="numberFormat" name="number_format" data-preview="true">
                         <option value="General">General</option>
                         <option value="0">Number (0)</option>
                         <option value="0.00">Decimal (0.00)</option>
                         <option value="$#,##0.00">Currency ($#,##0.00)</option>
                         <option value="0%">Percent (0%)</option>
                         <option value="mm/dd/yy">Date (mm/dd/yy)</option>
+                        <option value="h:mm AM/PM">Time (h:mm AM/PM)</option>
+                        <option value="@">Text</option>
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <div class="form-check mt-4">
-                        <input class="form-check-input" type="checkbox" id="wrapText" name="wrap_text">
-                        <label class="form-check-label" for="wrapText">Wrap Text</label>
+                    <div class="d-flex mt-4">
+                        <div class="form-check me-3">
+                            <input class="form-check-input" type="checkbox" id="wrapText" name="wrap_text" data-preview="true">
+                            <label class="form-check-label" for="wrapText">Wrap Text</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="mergedCell" name="merged_cell" data-preview="true">
+                            <label class="form-check-label" for="mergedCell">Merged Cell</label>
+                        </div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Live preview section -->
+            <div class="mt-4 mb-3">
+                <label class="form-label">Format Preview</label>
+                <div class="preview-container p-3 border">
+                    <div class="preview-text" id="previewText">AaBbCc123</div>
                 </div>
             </div>
             

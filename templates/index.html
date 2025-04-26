@@ -157,32 +157,95 @@ Sr No,Name,Roll No,ASS1,ASS2,ASS3,Total
 <div class="modal fade" id="addSheetModal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Add New Sheet</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-table"></i> Add New Sheet</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form method="POST" action="{{ url_for('add_sheet') }}">
                     <div class="mb-3">
-                        <label class="form-label">Sheet Name</label>
-                        <input type="text" name="sheet_name" class="form-control" required>
+                        <label class="form-label fw-bold">Sheet Name</label>
+                        <input type="text" name="sheet_name" class="form-control" required 
+                               placeholder="e.g., Class Assignments, Employee Data">
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Data</label>
-                        <div class="alert alert-info">
-                            <strong>Pro Tip:</strong> Add a Total column to automatically calculate sums!
+                        <label class="form-label fw-bold">Sheet Data</label>
+                        
+                        <!-- Tabbed interface for template selection -->
+                        <ul class="nav nav-tabs mb-3" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="blank-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#blank-data" type="button" role="tab">Blank</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="student-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#student-data" type="button" role="tab">Student Assignment</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="expense-tab" data-bs-toggle="tab" 
+                                        data-bs-target="#expense-data" type="button" role="tab">Expense Tracker</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content">
+                            <!-- Blank template -->
+                            <div class="tab-pane fade show active" id="blank-data" role="tabpanel">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle-fill"></i> 
+                                    <strong>Start with a blank sheet</strong> and add your own data.
+                                </div>
+                                <textarea name="data" id="blank-textarea" class="form-control" rows="6" required
+                                        placeholder="Header1,Header2,Header3;
+Value1,Value2,Value3;
+Value4,Value5,Value6"></textarea>
+                            </div>
+                            
+                            <!-- Student Assignment template -->
+                            <div class="tab-pane fade" id="student-data" role="tabpanel">
+                                <div class="alert alert-success">
+                                    <i class="bi bi-mortarboard-fill"></i>
+                                    <strong>Student Assignment Template</strong> - Track student grades with auto-calculated total.
+                                </div>
+                                <textarea name="data" id="student-textarea" class="form-control" rows="6">Sr No,Name,Roll No,ASS1,ASS2,ASS3,Total
+1,John Smith,101,85,90,88,=SUM(D2:F2)
+2,Emma Davis,102,78,82,80,=SUM(D3:F3)
+3,Michael Wilson,103,92,88,95,=SUM(D4:F4)
+4,Sarah Johnson,104,88,85,91,=SUM(D5:F5)</textarea>
+                            </div>
+                            
+                            <!-- Expense Tracker template -->
+                            <div class="tab-pane fade" id="expense-data" role="tabpanel">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-currency-dollar"></i>
+                                    <strong>Expense Tracker Template</strong> - Track expenses with auto-calculated total.
+                                </div>
+                                <textarea name="data" id="expense-textarea" class="form-control" rows="6">Date,Category,Description,Amount,Running Total
+2025-01-01,Groceries,Weekly shopping,125.50,=D2
+2025-01-03,Utilities,Electricity bill,85.75,=E2+D3
+2025-01-05,Entertainment,Movie tickets,32.00,=E3+D4
+2025-01-10,Transport,Gas refill,45.25,=E4+D5</textarea>
+                            </div>
                         </div>
-                        <textarea name="data" class="form-control" rows="5" required 
-                                placeholder="Sr No,Name,Roll No,ASS1,ASS2,ASS3,Total;1,John,101,85,90,88,=SUM(D2:F2)"></textarea>
-                        <div class="form-text">
-                            <ul class="mb-0">
-                                <li>Use commas (,) between columns</li>
-                                <li>Use semicolons (;) between rows</li>
-                                <li>Add =SUM(start:end) for totals</li>
-                            </ul>
+                        
+                        <div class="card mt-3 bg-light">
+                            <div class="card-body p-2">
+                                <h6 class="card-title mb-2"><i class="bi bi-lightbulb-fill text-warning"></i> Tips:</h6>
+                                <ul class="small mb-0">
+                                    <li>Use commas <code>,</code> to separate columns</li>
+                                    <li>Use semicolons <code>;</code> to separate rows</li>
+                                    <li>Use <code>=SUM(X:Y)</code> for column/row totals</li>
+                                    <li>Formulas like <code>=D2+D3</code> will auto-calculate</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Create Sheet</button>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Create Sheet
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -192,9 +255,9 @@ Sr No,Name,Roll No,ASS1,ASS2,ASS3,Total
 <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-dark text-white">
                 <h5 class="modal-title" id="previewModalLabel">Sheet Preview</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="table-responsive">

@@ -4,470 +4,1679 @@
 
 {% block head %}
 <style>
-    /* Excel-like styling */
+    /* Excel-like UI styles */
+    :root {
+        --excel-header-bg: #f2f2f2;
+        --excel-header-text: #217346;
+        --excel-border: #d4d4d4;
+        --excel-active-cell: #d8d8d8;
+        --excel-hover-cell: #e6f2ff;
+        --excel-selected-cell: rgba(33, 115, 70, 0.2);
+        --excel-selected-border: #217346;
+        --excel-toolbar-bg: #f5f5f5;
+    }
+    
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background-color: #f9f9f9;
+    }
+    
     .excel-container {
-        position: relative;
-        height: calc(100vh - 200px);
+        border: 1px solid var(--excel-border);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 2px;
         overflow: auto;
-        border: 1px solid #ccc;
-        background: #f8f9fa;
-    }
-    
-    /* Column headers row */
-    .excel-column-headers {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        background: #e9ecef;
-        display: flex;
-        height: 25px;
-        margin-left: 40px; /* Space for row headers */
-    }
-    
-    .excel-column-header {
-        flex: 0 0 80px;
-        border: 1px solid #ddd;
-        border-left: none;
-        text-align: center;
-        font-weight: 500;
-        background: #e9ecef;
-        user-select: none;
-        cursor: col-resize;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        height: calc(100vh - 280px);
+        min-height: 400px;
         position: relative;
+        background-color: white;
     }
     
-    /* Row headers column */
-    .excel-row-headers {
+    /* Row/column headers */
+    .row-header-container {
         position: sticky;
         left: 0;
-        z-index: 15;
-        display: flex;
-        flex-direction: column;
-        width: 40px;
+        z-index: 20;
+        background-color: var(--excel-header-bg);
+        width: 30px;
     }
     
-    .excel-row-header {
-        flex: 0 0 25px;
-        border: 1px solid #ddd;
-        border-top: none;
+    .row-header {
+        height: 25px;
         text-align: center;
-        background: #e9ecef;
-        user-select: none;
-        cursor: row-resize;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        border-right: 1px solid var(--excel-border);
+        border-bottom: 1px solid var(--excel-border);
+        padding: 2px;
+        font-size: 11px;
+        color: #444;
     }
     
-    /* Sheet table */
-    .sheet-table {
+    .column-header-container {
+        position: sticky;
+        top: 0;
+        z-index: 21;
+        background-color: var(--excel-header-bg);
+        height: 25px;
+    }
+    
+    .column-header {
+        width: 80px;
+        text-align: center;
+        border-right: 1px solid var(--excel-border);
+        border-bottom: 1px solid var(--excel-border);
+        padding: 2px;
+        font-size: 11px;
+        color: #444;
+    }
+
+    #sheetTable {
+        width: auto;
         border-collapse: collapse;
         table-layout: fixed;
-        width: 100%;
     }
-    
-    .sheet-header {
+
+    #sheetTable th, #sheetTable td {
+        border: 1px solid var(--excel-border);
+        padding: 2px 4px;
+        position: relative;
+    }
+
+    #sheetTable thead th {
+        background-color: var(--excel-header-bg);
+        color: var(--excel-header-text);
+        font-weight: normal;
+        font-size: 11px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        height: 25px;
+        text-align: center;
+    }
+
+    #sheetTable tbody td {
         height: 25px;
         min-width: 80px;
         max-width: 200px;
-        padding: 0;
-        position: sticky;
-        top: 0;
-        background-color: #E9ECEF;
-        z-index: 10;
-        font-weight: bold;
-    }
-    
-    .sheet-cell {
-        padding: 0;
-        position: relative;
-        height: 25px;
-        min-width: 80px;
-    }
-    
-    .sheet-cell.selected, .sheet-header.selected {
-        outline: 2px solid #1a73e8;
-        position: relative;
-        z-index: 5;
-    }
-    
-    .editable-cell {
-        min-height: 25px;
-        height: 100%;
-        width: 100%;
-        padding: 2px 4px;
-        outline: none;
+        text-align: left;
+        font-size: 13px;
+        white-space: nowrap;
         overflow: hidden;
-        white-space: pre-wrap;
-        word-break: break-word;
-        border: none;
+        text-overflow: ellipsis;
     }
     
-    .sheet-cell.formula-cell .editable-cell {
-        background-color: #e8f0fe;
-        font-family: monospace;
+    #sheetTable tbody td:hover {
+        background-color: var(--excel-hover-cell);
+    }
+    
+    /* Style for selected cells */
+    .selected {
+        background-color: var(--excel-selected-cell) !important;
+        border: 2px solid var(--excel-selected-border) !important;
+    }
+
+    /* Custom Excel-like toolbar */
+    .excel-toolbar {
+        background-color: var(--excel-toolbar-bg);
+        border-bottom: 1px solid var(--excel-border);
+        padding: 5px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .excel-toolbar .btn-group {
+        margin-right: 8px;
+        margin-bottom: 4px;
+        border-right: 1px solid #ddd;
+        padding-right: 8px;
+    }
+    
+    .excel-toolbar .btn-group:last-child {
+        border-right: none;
+    }
+    
+    .excel-toolbar .btn {
+        font-size: 12px;
+        padding: 4px 8px;
     }
     
     /* Style for merged cells */
     .merged-cell {
+        background-color: white;
         position: relative;
-        box-shadow: 0 0 0 1px #1a73e8;
     }
 
     .merged-cell .editable-cell {
         position: absolute;
         top: 0;
         left: 0;
-        right: 0;
-        bottom: 0;
         width: 100%;
         height: 100%;
-        overflow: auto;
     }
-    
-    /* Formatting panel */
-    .formatting-panel {
-        position: sticky;
-        top: 0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border-radius: 4px;
-        overflow: hidden;
-        display: none;
-    }
-    
-    .formatting-panel.visible {
-        display: block;
-    }
-    
-    .format-toolbar {
-        background: #f1f3f4;
-        padding: 8px;
-        border-bottom: 1px solid #dadce0;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-    }
-    
-    .format-group {
-        margin-right: 16px;
-        display: flex;
-        align-items: center;
-    }
-    
-    .format-separator {
-        height: 20px;
-        width: 1px;
-        background: #dadce0;
-        margin: 0 8px;
-    }
-    
-    /* Resize handles */
-    .col-resize-handle {
+
+    /* Column resize handle */
+    .column-resize-handle {
         position: absolute;
-        right: 0;
         top: 0;
+        right: 0;
         width: 4px;
         height: 100%;
         cursor: col-resize;
-        z-index: 25;
+        z-index: 10;
     }
     
+    .column-resize-handle:hover {
+        background-color: var(--excel-selected-border);
+    }
+
+    /* Row resize handle */
     .row-resize-handle {
         position: absolute;
         bottom: 0;
         left: 0;
-        height: 4px;
         width: 100%;
+        height: 4px;
         cursor: row-resize;
-        z-index: 25;
+        z-index: 10;
     }
     
-    /* Context menu */
-    .excel-context-menu {
+    .row-resize-handle:hover {
+        background-color: var(--excel-selected-border);
+    }
+    
+    /* Alphabetical column headers */
+    .column-letter {
         position: absolute;
+        top: 2px;
+        left: 2px;
+        font-size: 10px;
+        color: #444;
+        font-weight: normal;
+    }
+    
+    /* Active button styling */
+    .btn-active {
+        background-color: var(--excel-selected-border);
+        color: white;
+    }
+    
+    /* Animation for toast */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        animation: fadeInUp 0.3s ease-out;
+    }
+    
+    /* Formula input */
+    .formula-input {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        width: 300px;
+        background-color: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         z-index: 1000;
-        background: white;
-        border: 1px solid #ccc;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-        border-radius: 4px;
-        padding: 5px 0;
-        min-width: 150px;
+        display: none;
     }
     
-    .excel-context-menu-item {
-        padding: 6px 15px;
-        cursor: pointer;
+    /* Styling for text formatting effects */
+    .bold-text {
+        font-weight: bold;
     }
     
-    .excel-context-menu-item:hover {
-        background: #f1f3f4;
+    .italic-text {
+        font-style: italic;
     }
     
-    .excel-context-menu-separator {
-        height: 1px;
-        background: #ddd;
-        margin: 5px 0;
+    .underline-text {
+        text-decoration: underline;
     }
     
-    .excel-toast {
-        transition: all 0.3s ease;
+    .left-aligned {
+        text-align: left;
     }
     
-    .excel-context-menu {
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    .center-aligned {
+        text-align: center;
+    }
+    
+    .right-aligned {
+        text-align: right;
     }
 
-    /* Active state for formatting buttons */
-    .btn-active {
-        background-color: #e9ecef;
-        border-color: #ced4da;
-        box-shadow: inset 0 3px 5px rgba(0,0,0,0.125);
+    /* Style for editable cells */
+    .editable-cell {
+        outline: none;
+        min-height: 20px;
+        width: 100%;
+        height: 100%;
+        display: block;
+        padding: 1px 2px;
     }
     
-    /* Make sure contenteditable cells maintain formatting */
-    [contenteditable="true"] {
-        white-space: pre-wrap;
+    /* Make sure header cells have transparent background */
+    .sheet-header .editable-cell {
+        background-color: transparent !important;
+    }
+    
+    /* Formula bar styling */
+    .formula-bar {
+        display: flex;
+        align-items: center;
+        padding: 5px;
+        background-color: var(--excel-toolbar-bg);
+        border-bottom: 1px solid var(--excel-border);
+    }
+    
+    .formula-bar .cell-reference {
+        width: 50px;
+        padding: 3px 8px;
+        background-color: #e9e9e9;
+        border: 1px solid var(--excel-border);
+        font-size: 12px;
+        margin-right: 5px;
+        border-radius: 2px;
+    }
+    
+    .formula-bar .formula-input {
+        flex: 1;
+        padding: 3px 8px;
+        border: 1px solid var(--excel-border);
+        font-size: 12px;
+        border-radius: 2px;
+    }
+    
+    /* Row numbers */
+    .row-numbers {
+        position: sticky;
+        left: 0;
+        z-index: 15;
+        width: 30px;
+        background-color: var(--excel-header-bg);
+    }
+    
+    .row-number {
+        height: 25px;
+        border-right: 1px solid var(--excel-border);
+        border-bottom: 1px solid var(--excel-border);
+        text-align: center;
+        padding: 2px;
+        font-size: 11px;
+        color: #444;
+    }
+    
+    /* Formula cell styling */
+    .formula-cell {
+        background-color: #f2f9f5 !important;
+    }
+    
+    /* Add sheet-specific styling */
+    .sheet-tabs {
+        display: flex;
+        background-color: #f5f5f5;
+        border-top: 1px solid var(--excel-border);
+    }
+    
+    .sheet-tab {
+        padding: 5px 15px;
+        border-right: 1px solid var(--excel-border);
+        cursor: pointer;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+    
+    .sheet-tab.active {
+        background-color: white;
+        border-bottom: 2px solid var(--excel-selected-border);
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3">
-    <div id="sheet-data" style="display: none;" data-sheet="{{ sheet.data|tojson }}"></div>
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3>{{ sheet.sheet_name }}</h3>
-                <div>
-                    <button class="btn btn-sm btn-outline-secondary me-2" id="toggleFormatPanel">
-                        <i class="bi bi-brush"></i> Format
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary me-2" id="addRowBtn">
-                        <i class="bi bi-plus-lg"></i> Add Row
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary me-2" id="addColumnBtn">
-                        <i class="bi bi-plus-lg"></i> Add Column
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger me-2" id="deleteRowBtn">
-                        <i class="bi bi-trash"></i> Delete Row
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger me-2" id="deleteColumnBtn">
-                        <i class="bi bi-trash"></i> Delete Column
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary me-2" id="mergeCellsBtn">
-                        <i class="bi bi-grid-3x3-gap-fill"></i> Merge Cells
-                    </button>
-                    <button class="btn btn-success btn-sm" id="saveSheetBtn">
-                        <i class="bi bi-save"></i> Save Changes
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Format Toolbar -->
-    <div class="format-toolbar mb-2">
-        <div class="format-group">
-            <select class="form-select form-select-sm" id="fontName" style="width: 120px">
-                <option value="Arial">Arial</option>
-                <option value="Calibri">Calibri</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Courier New">Courier New</option>
-                <option value="Verdana">Verdana</option>
-            </select>
+<div class="container-fluid py-2">
+    <!-- Excel-like toolbar -->
+    <div class="excel-toolbar mb-1">
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-secondary" id="saveSheetBtn" title="Save">
+                <i class="bi bi-save"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="downloadBtn" title="Download as Excel">
+                <i class="bi bi-download"></i>
+            </button>
         </div>
         
-        <div class="format-group">
-            <select class="form-select form-select-sm" id="fontSize" style="width: 60px">
-                <option value="8">8</option>
-                <option value="9">9</option>
+        <!-- Font Family and Size Dropdown -->
+        <div class="btn-group me-2">
+            <select class="form-select form-select-sm" id="fontFamilySelect" title="Font Family" style="max-width: 120px;">
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="'Times New Roman', serif">Times New Roman</option>
+                <option value="Courier, monospace">Courier</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+                <option value="'Segoe UI', sans-serif">Segoe UI</option>
+            </select>
+            <select class="form-select form-select-sm" id="fontSizeSelect" title="Font Size" style="max-width: 70px;">
                 <option value="10">10</option>
-                <option value="11" selected>11</option>
-                <option value="12">12</option>
+                <option value="11">11</option>
+                <option value="12" selected>12</option>
                 <option value="14">14</option>
                 <option value="16">16</option>
                 <option value="18">18</option>
+                <option value="20">20</option>
+                <option value="24">24</option>
+                <option value="28">28</option>
+                <option value="32">32</option>
             </select>
         </div>
         
-        <div class="format-separator"></div>
-        
-        <div class="format-group">
-            <button class="btn btn-sm btn-outline-secondary" id="boldBtn">
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-secondary" id="boldBtn" title="Bold">
                 <i class="bi bi-type-bold"></i>
             </button>
-            <button class="btn btn-sm btn-outline-secondary mx-1" id="italicBtn">
+            <button class="btn btn-sm btn-outline-secondary" id="italicBtn" title="Italic">
                 <i class="bi bi-type-italic"></i>
             </button>
-            <button class="btn btn-sm btn-outline-secondary" id="underlineBtn">
+            <button class="btn btn-sm btn-outline-secondary" id="underlineBtn" title="Underline">
                 <i class="bi bi-type-underline"></i>
             </button>
         </div>
         
-        <div class="format-separator"></div>
-        
-        <div class="format-group">
-            <input type="color" class="form-control form-control-sm form-control-color" id="fontColor" value="#000000">
-            <input type="color" class="form-control form-control-sm form-control-color ms-1" id="bgColor" value="#FFFFFF">
-        </div>
-        
-        <div class="format-separator"></div>
-        
-        <div class="format-group">
-            <button class="btn btn-sm btn-outline-secondary" id="alignLeftBtn">
-                <i class="bi bi-text-left"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-secondary mx-1" id="alignCenterBtn">
-                <i class="bi bi-text-center"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-secondary" id="alignRightBtn">
-                <i class="bi bi-text-right"></i>
-            </button>
-        </div>
-        
-        <div class="format-separator"></div>
-        
-        <div class="format-group">
-            <select class="form-select form-select-sm" id="borderStyle" style="width: 100px">
-                <option value="none">No Border</option>
-                <option value="thin">Thin</option>
-                <option value="medium">Medium</option>
-                <option value="thick">Thick</option>
-                <option value="dotted">Dotted</option>
-                <option value="dashed">Dashed</option>
-            </select>
-            <input type="color" class="form-control form-control-sm form-control-color ms-1" id="borderColor" value="#000000">
-        </div>
-        
-        <div class="format-separator"></div>
-        
-        <div class="format-group">
-            <button class="btn btn-sm btn-outline-secondary" id="mergeBtn">
-                <i class="bi bi-grid-3x3"></i> Merge
-            </button>
-        </div>
-
-        <div class="format-separator"></div>
-
-        <div class="format-group">
-            <button class="btn btn-sm btn-outline-secondary" id="addHeaderBtn" title="Add Header">
-                <i class="bi bi-plus-square"></i> Add Header
-            </button>
-            <button class="btn btn-sm btn-outline-secondary ms-1" id="headerColorBtn" title="Change Header Color">
-                <i class="bi bi-palette"></i> Header Color
-            </button>
-        </div>
-
-        <!-- Add direct merge button -->
         <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="directMergeBtn">
-                <i class="bi bi-grid-3x3-gap"></i> Merge Cells
+            <button class="btn btn-sm btn-outline-primary" id="addRowBtn" title="Add Row">
+                <i class="bi bi-plus-lg"></i> Row
+            </button>
+            <button class="btn btn-sm btn-outline-primary" id="addColumnBtn" title="Add Column">
+                <i class="bi bi-plus-lg"></i> Column
             </button>
         </div>
-    </div>
-
-    <div class="row">
-        <div class="col-12">
-            <div class="excel-container" id="excelContainer">
-                <!-- Ensure the table structure is correct -->
-                <table id="sheetTable" class="sheet-table" data-sheet-name="{{ sheet.sheet_name }}">
-                    <thead>
-                        <tr>
-                            {% for header in data[0] %}
-                            <th class="sheet-header" data-col="{{ loop.index0 }}">
-                                <div class="editable-cell" contenteditable="true">{{ header }}</div>
-                            </th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in data[1:] %}
-                        {% set outer_loop = loop %}
-                        <tr data-row="{{ loop.index0 }}" style="height: 25px;">
-                            {% for cell in row %}
-                            {% set row_index = outer_loop.index0 %}
-                            {% set col_index = loop.index0 %}
-                            {% set cell_ref = (65 + col_index)|char ~ (row_index + 2) %}
-                            {% set cell_format = format_metadata[cell_ref]|default({}) if format_metadata else {} %}
-                            <td class="sheet-cell {% if cell and cell.startswith('=') %}formula-cell{% endif %}"
-                                data-row="{{ row_index }}" 
-                                data-col="{{ col_index }}"
-                                {% if cell and cell.startswith('=') %}data-formula="{{ cell }}"{% endif %}
-                                style="{% if cell_format.bg_color %}background-color: {{ cell_format.bg_color }};{% endif %}">
-                                <div class="editable-cell" contenteditable="true">{{ cell }}</div>
-                            </td>
-                            {% endfor %}
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-danger" id="deleteRowBtn" title="Delete Row">
+                <i class="bi bi-dash-circle"></i> Row
+            </button>
+            <button class="btn btn-sm btn-outline-danger" id="deleteColumnBtn" title="Delete Column">
+                <i class="bi bi-dash-circle"></i> Column
+            </button>
+        </div>
+        
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-secondary" id="moveRowUpBtn" title="Move Row Up">
+                <i class="bi bi-arrow-up"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="moveRowDownBtn" title="Move Row Down">
+                <i class="bi bi-arrow-down"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="moveColLeftBtn" title="Move Column Left">
+                <i class="bi bi-arrow-left"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="moveColRightBtn" title="Move Column Right">
+                <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+        
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-secondary" id="mergeCellsBtn" title="Merge Cells">
+                <i class="bi bi-grid-3x2"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="divideCellBtn" title="Divide Cell">
+                <i class="bi bi-grid-3x2-gap"></i>
+            </button>
+        </div>
+        
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-success" id="rowFormulaBtn" title="Row Formula">
+                <i class="bi bi-calculator"></i> Row
+            </button>
+            <button class="btn btn-sm btn-outline-success" id="columnFormulaBtn" title="Column Formula">
+                <i class="bi bi-calculator"></i> Column
+            </button>
+        </div>
+        
+        <div class="btn-group">
+            <input type="color" id="bgColorPicker" class="d-none">
+            <button class="btn btn-sm btn-outline-info" id="bgColorBtn" title="Background Color">
+                <i class="bi bi-palette"></i>
+            </button>
         </div>
     </div>
     
-    <!-- Include formatting panel but hidden by default -->
-    <div class="formatting-panel" id="formattingPanel">
-        {% include 'format_panel.html' %}
+    <!-- Formula bar -->
+    <div class="formula-bar">
+        <div class="cell-reference" id="cellRef">A1</div>
+        <input type="text" class="formula-input" id="activeFormulaBar" placeholder="Enter formula or data">
     </div>
+    
+    <!-- Excel sheet container -->
+    <div class="excel-container" id="excelContainer">
+        <table id="sheetTable" class="sheet-table" data-sheet-name="{{ sheet.sheet_name }}">
+            <thead>
+                <tr>
+                    {% for header in data[0] %}
+                    <th class="sheet-header" data-col="{{ loop.index0 }}" style="width: 80px;">
+                        <!-- Add column letter (A, B, C...) -->
+                        <span class="column-letter">{{ loop.index0|column_letter }}</span>
+                        <div class="editable-cell" contenteditable="true">{{ header }}</div>
+                        <!-- Add column resize handle -->
+                        <div class="column-resize-handle" data-col="{{ loop.index0 }}"></div>
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data[1:] %}
+                {% set outer_loop = loop %}
+                <tr data-row="{{ loop.index0 }}" style="height: 25px;">
+                    {% for cell in row %}
+                    <td class="sheet-cell" data-row="{{ outer_loop.index0 }}" data-col="{{ loop.index0 }}">
+                        <div class="editable-cell" contenteditable="true">{{ cell }}</div>
+                        {% if loop.last %}
+                        <!-- Add row resize handle to the last cell in each row -->
+                        <div class="row-resize-handle" data-row="{{ outer_loop.index0 }}"></div>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Sheet tabs (Excel-like interface) -->
+    <div class="sheet-tabs">
+        <div class="sheet-tab active">{{ sheet.sheet_name }}</div>
+        <div class="sheet-tab">+ Add Sheet</div>
+    </div>
+    
+    <!-- Formula Input Dialog (Hidden by default) -->
+    <div class="formula-input" id="formulaInput">
+        <div class="input-group mb-2">
+            <span class="input-group-text">Formula</span>
+            <input type="text" class="form-control" id="formulaInputField" placeholder="e.g. =SUM(A1:A5)">
+        </div>
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-sm btn-secondary me-2" id="cancelFormulaBtn">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" id="applyFormulaBtn">Apply</button>
+        </div>
+    </div>
+    
+    <!-- Toast container for notifications -->
+    <div class="toast-container"></div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/sheet-editor.js') }}"></script>
+
 <script>
-    // Debug: Log data to see if it's loading properly
-    console.log('Sheet data from template:', {{ data|tojson }});
-    
-    function restoreColumnFormulas() {
-        // Check if we have column formulas data
-        const sheetData = {{ sheet.data|tojson }};
+    document.addEventListener('DOMContentLoaded', function() {
+        // Global variable for selected cells
+        window.selectedCells = [];
         
-        if (sheetData && sheetData.column_formulas) {
-            // Restore formulas to headers
-            Object.entries(sheetData.column_formulas).forEach(([colIndex, formula]) => {
-                const header = document.querySelector(`.sheet-header[data-col="${colIndex}"]`);
-                if (header) {
-                    header.setAttribute('data-column-formula', formula);
+        // Current state tracking
+        let currentState = {
+            bold: false,
+            italic: false,
+            underline: false,
+            alignment: 'center'
+        };
+        
+        // Elements for formula handling
+        const formulaInput = document.getElementById('formulaInput');
+        const formulaInputField = document.getElementById('formulaInputField');
+        const applyFormulaBtn = document.getElementById('applyFormulaBtn');
+        const cancelFormulaBtn = document.getElementById('cancelFormulaBtn');
+        let formulaTarget = null; // Will store whether we're targeting 'row' or 'column'
+        let formulaSelection = null; // Will store the selected row/column index
+        
+        // Helper function to convert column index to letter (A, B, C..., Z, AA, AB...)
+        function getColumnLetter(index) {
+            let letter = '';
+            
+            if (index >= 26) {
+                letter += String.fromCharCode(65 + Math.floor(index / 26) - 1);
+                letter += String.fromCharCode(65 + (index % 26));
+            } else {
+                letter = String.fromCharCode(65 + index);
+            }
+            
+            return letter;
+        }
+        
+        // Add column letters if they're missing
+        document.querySelectorAll('th[data-col]').forEach(th => {
+            const colIndex = parseInt(th.getAttribute('data-col'));
+            
+            // Check if column letter exists
+            if (!th.querySelector('.column-letter')) {
+                const letterSpan = document.createElement('span');
+                letterSpan.className = 'column-letter';
+                letterSpan.textContent = getColumnLetter(colIndex);
+                th.appendChild(letterSpan);
+            }
+        });
+        
+        // Initialize toggle format panel functionality
+        const formatPanel = document.querySelector('.formatting-panel');
+        const toggleFormatPanelBtn = document.getElementById('toggleFormatPanel');
+        
+        if (toggleFormatPanelBtn && formatPanel) {
+            toggleFormatPanelBtn.addEventListener('click', function() {
+                if (formatPanel.style.display === 'none') {
+                    formatPanel.style.display = 'block';
+                    toggleFormatPanelBtn.classList.add('active');
+                } else {
+                    formatPanel.style.display = 'none';
+                    toggleFormatPanelBtn.classList.remove('active');
+                }
+            });
+        }
+        
+        // Add cell selection functionality
+        const tableCells = document.querySelectorAll('#sheetTable td, #sheetTable th');
+        tableCells.forEach(cell => {
+            cell.addEventListener('click', function(e) {
+                // Check if the click was on a resize handle
+                if (e.target.classList.contains('column-resize-handle') || 
+                    e.target.classList.contains('row-resize-handle')) {
+                    return;
+                }
+                
+                // Check if Ctrl key is pressed
+                if (e.ctrlKey || e.metaKey) {
+                    // Multi-select mode
+                    const index = selectedCells.indexOf(this);
+                    if (index !== -1) {
+                        // Deselect if already selected
+                        this.classList.remove('selected');
+                        selectedCells.splice(index, 1);
+                    } else {
+                        // Add to selection
+                        this.classList.add('selected');
+                        selectedCells.push(this);
+                    }
+                } else {
+                    // Single select mode
+                    // Clear existing selection
+                    selectedCells.forEach(c => c.classList.remove('selected'));
+                    selectedCells = [this];
+                    this.classList.add('selected');
+                }
+                
+                // Check cell formatting to update UI buttons
+                updateButtonStates();
+                
+                e.stopPropagation();
+            });
+        });
+        
+        // Update formatting button UI states based on current cell selection
+        function updateButtonStates() {
+            // Reset all button states
+            document.getElementById('boldBtn').classList.remove('btn-active');
+            document.getElementById('italicBtn').classList.remove('btn-active');
+            document.getElementById('underlineBtn').classList.remove('btn-active');
+            document.getElementById('alignLeftBtn').classList.remove('btn-active');
+            document.getElementById('alignCenterBtn').classList.remove('btn-active');
+            document.getElementById('alignRightBtn').classList.remove('btn-active');
+            
+            // If we have selected cells, check their formatting
+            if (selectedCells.length > 0) {
+                const cell = selectedCells[0];
+                const editableDiv = cell.querySelector('.editable-cell');
+                
+                if (editableDiv) {
+                    // Check for bold
+                    if (editableDiv.classList.contains('bold-text') || 
+                        window.getComputedStyle(editableDiv).fontWeight >= 600) {
+                        document.getElementById('boldBtn').classList.add('btn-active');
+                        currentState.bold = true;
+                    } else {
+                        currentState.bold = false;
+                    }
                     
-                    // Apply formula to all cells in the column
-                    const colCells = document.querySelectorAll(`.sheet-cell[data-col="${colIndex}"]`);
-                    colCells.forEach((cell, rowIndex) => {
-                        const rowNum = rowIndex + 2; // +2 for header row offset
-                        const cellFormula = formula.replace(/{n}/g, rowNum);
+                    // Check for italic
+                    if (editableDiv.classList.contains('italic-text') || 
+                        window.getComputedStyle(editableDiv).fontStyle === 'italic') {
+                        document.getElementById('italicBtn').classList.add('btn-active');
+                        currentState.italic = true;
+                    } else {
+                        currentState.italic = false;
+                    }
+                    
+                    // Check for underline
+                    if (editableDiv.classList.contains('underline-text') || 
+                        window.getComputedStyle(editableDiv).textDecoration.includes('underline')) {
+                        document.getElementById('underlineBtn').classList.add('btn-active');
+                        currentState.underline = true;
+                    } else {
+                        currentState.underline = false;
+                    }
+                    
+                    // Check alignment
+                    const alignment = window.getComputedStyle(editableDiv).textAlign;
+                    if (alignment === 'left' || editableDiv.classList.contains('left-aligned')) {
+                        document.getElementById('alignLeftBtn').classList.add('btn-active');
+                        currentState.alignment = 'left';
+                    } else if (alignment === 'right' || editableDiv.classList.contains('right-aligned')) {
+                        document.getElementById('alignRightBtn').classList.add('btn-active');
+                        currentState.alignment = 'right';
+                    } else {
+                        document.getElementById('alignCenterBtn').classList.add('btn-active');
+                        currentState.alignment = 'center';
+                    }
+                }
+            }
+        }
+        
+        // Click outside to clear selection
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#sheetTable')) {
+                selectedCells.forEach(c => c.classList.remove('selected'));
+                selectedCells = [];
+            }
+        });
+        
+        // Initialize resizing
+        initializeResizing();
+        
+        function initializeResizing() {
+            // Column resize
+            document.querySelectorAll('.column-resize-handle').forEach(handle => {
+                handle.addEventListener('mousedown', startColumnResize);
+            });
+            
+            // Row resize
+            document.querySelectorAll('.row-resize-handle').forEach(handle => {
+                handle.addEventListener('mousedown', startRowResize);
+            });
+        }
+        
+        // Column resize functionality
+        function startColumnResize(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const colIndex = parseInt(this.getAttribute('data-col'));
+            const startX = e.pageX;
+            
+            // Find all cells in this column
+            const headerCell = document.querySelector(`th[data-col="${colIndex}"]`);
+            const startWidth = headerCell.offsetWidth;
+            
+            // Create visual indicator
+            const indicator = document.createElement('div');
+            indicator.style.position = 'absolute';
+            indicator.style.top = '0';
+            indicator.style.bottom = '0';
+            indicator.style.width = '2px';
+            indicator.style.backgroundColor = '#0d6efd';
+            indicator.style.zIndex = '999';
+            indicator.style.left = (e.pageX) + 'px';
+            document.body.appendChild(indicator);
+            
+            function handleMouseMove(e) {
+                const width = Math.max(30, startWidth + (e.pageX - startX)); // Minimum width: 30px
+                
+                // Update indicator position
+                indicator.style.left = (e.pageX) + 'px';
+                
+                // Update column width
+                document.querySelectorAll(`[data-col="${colIndex}"]`).forEach(cell => {
+                    cell.style.width = `${width}px`;
+                });
+            }
+            
+            function handleMouseUp() {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                
+                // Remove indicator
+                document.body.removeChild(indicator);
+                
+                // Save the changes
+                // If you have a save function, call it here
+            }
+            
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+        
+        // Row resize functionality
+        function startRowResize(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const rowIndex = parseInt(this.getAttribute('data-row'));
+            const startY = e.pageY;
+            
+            // Find the row
+            const row = document.querySelector(`tr[data-row="${rowIndex}"]`);
+            const startHeight = row.offsetHeight;
+            
+            // Create visual indicator
+            const indicator = document.createElement('div');
+            indicator.style.position = 'absolute';
+            indicator.style.left = '0';
+            indicator.style.right = '0';
+            indicator.style.height = '2px';
+            indicator.style.backgroundColor = '#0d6efd';
+            indicator.style.zIndex = '999';
+            indicator.style.top = (e.pageY) + 'px';
+            document.body.appendChild(indicator);
+            
+            function handleMouseMove(e) {
+                const height = Math.max(20, startHeight + (e.pageY - startY)); // Minimum height: 20px
+                
+                // Update indicator position
+                indicator.style.top = (e.pageY) + 'px';
+                
+                // Update row height
+                row.style.height = `${height}px`;
+            }
+            
+            function handleMouseUp() {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                
+                // Remove indicator
+                document.body.removeChild(indicator);
+                
+                // Save the changes
+                // If you have a save function, call it here
+            }
+            
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+        
+        // Helper function to show a notification toast
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast show mb-2`;
+            toast.role = 'alert';
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            // Set background color based on type
+            const bgClass = type === 'error' ? 'bg-danger' : 
+                           type === 'success' ? 'bg-success' : 'bg-info';
+            
+            toast.innerHTML = `
+                <div class="toast-header ${bgClass} text-white">
+                    <strong class="me-auto">Excel Generator</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body bg-light">
+                    ${message}
+                </div>
+            `;
+            
+            // Add to container
+            toastContainer.appendChild(toast);
+            
+            // Add close button functionality
+            toast.querySelector('.btn-close').addEventListener('click', function() {
+                toast.remove();
+            });
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        // Text formatting functions
+        function toggleBold() {
+            if (selectedCells.length === 0) {
+                showToast('Please select at least one cell first', 'error');
+                return;
+            }
+            
+            // Toggle state
+            currentState.bold = !currentState.bold;
+            
+            // Update button appearance
+            const boldBtn = document.getElementById('boldBtn');
+            if (currentState.bold) {
+                boldBtn.classList.add('btn-active');
+            } else {
+                boldBtn.classList.remove('btn-active');
+            }
+            
+            // Apply to selected cells
+            selectedCells.forEach(cell => {
+                const editableDiv = cell.querySelector('.editable-cell');
+                if (editableDiv) {
+                    if (currentState.bold) {
+                        editableDiv.classList.add('bold-text');
+                        editableDiv.style.fontWeight = 'bold';
+                    } else {
+                        editableDiv.classList.remove('bold-text');
+                        editableDiv.style.fontWeight = 'normal';
+                    }
+                }
+            });
+            
+            showToast(`Bold formatting ${currentState.bold ? 'applied' : 'removed'}`, 'success');
+        }
+        
+        function toggleItalic() {
+            if (selectedCells.length === 0) {
+                showToast('Please select at least one cell first', 'error');
+                return;
+            }
+            
+            // Toggle state
+            currentState.italic = !currentState.italic;
+            
+            // Update button appearance
+            const italicBtn = document.getElementById('italicBtn');
+            if (currentState.italic) {
+                italicBtn.classList.add('btn-active');
+            } else {
+                italicBtn.classList.remove('btn-active');
+            }
+            
+            // Apply to selected cells
+            selectedCells.forEach(cell => {
+                const editableDiv = cell.querySelector('.editable-cell');
+                if (editableDiv) {
+                    if (currentState.italic) {
+                        editableDiv.classList.add('italic-text');
+                        editableDiv.style.fontStyle = 'italic';
+                    } else {
+                        editableDiv.classList.remove('italic-text');
+                        editableDiv.style.fontStyle = 'normal';
+                    }
+                }
+            });
+            
+            showToast(`Italic formatting ${currentState.italic ? 'applied' : 'removed'}`, 'success');
+        }
+        
+        function toggleUnderline() {
+            if (selectedCells.length === 0) {
+                showToast('Please select at least one cell first', 'error');
+                return;
+            }
+            
+            // Toggle state
+            currentState.underline = !currentState.underline;
+            
+            // Update button appearance
+            const underlineBtn = document.getElementById('underlineBtn');
+            if (currentState.underline) {
+                underlineBtn.classList.add('btn-active');
+            } else {
+                underlineBtn.classList.remove('btn-active');
+            }
+            
+            // Apply to selected cells
+            selectedCells.forEach(cell => {
+                const editableDiv = cell.querySelector('.editable-cell');
+                if (editableDiv) {
+                    if (currentState.underline) {
+                        editableDiv.classList.add('underline-text');
+                        editableDiv.style.textDecoration = 'underline';
+                    } else {
+                        editableDiv.classList.remove('underline-text');
+                        editableDiv.style.textDecoration = 'none';
+                    }
+                }
+            });
+            
+            showToast(`Underline formatting ${currentState.underline ? 'applied' : 'removed'}`, 'success');
+        }
+        
+        // Alignment functions
+        function setAlignment(alignment) {
+            if (selectedCells.length === 0) {
+                showToast('Please select at least one cell first', 'error');
+                return;
+            }
+            
+            // Update state
+            currentState.alignment = alignment;
+            
+            // Update button appearance
+            document.getElementById('alignLeftBtn').classList.remove('btn-active');
+            document.getElementById('alignCenterBtn').classList.remove('btn-active');
+            document.getElementById('alignRightBtn').classList.remove('btn-active');
+            
+            if (alignment === 'left') {
+                document.getElementById('alignLeftBtn').classList.add('btn-active');
+            } else if (alignment === 'right') {
+                document.getElementById('alignRightBtn').classList.add('btn-active');
+            } else {
+                document.getElementById('alignCenterBtn').classList.add('btn-active');
+            }
+            
+            // Remove all alignment classes first
+            selectedCells.forEach(cell => {
+                const editableDiv = cell.querySelector('.editable-cell');
+                if (editableDiv) {
+                    editableDiv.classList.remove('left-aligned', 'center-aligned', 'right-aligned');
+                    
+                    if (alignment === 'left') {
+                        editableDiv.classList.add('left-aligned');
+                        editableDiv.style.textAlign = 'left';
+                    } else if (alignment === 'right') {
+                        editableDiv.classList.add('right-aligned');
+                        editableDiv.style.textAlign = 'right';
+                    } else {
+                        editableDiv.classList.add('center-aligned');
+                        editableDiv.style.textAlign = 'center';
+                    }
+                }
+            });
+            
+            showToast(`Text aligned ${alignment}`, 'success');
+        }
+        
+        // Delete row function
+        function deleteRow() {
+            if (selectedCells.length === 0) {
+                showToast('Please select a cell in the row to delete', 'error');
+                return;
+            }
+            
+            // Get unique rows to delete (in case multiple cells in same row are selected)
+            const rowsToDelete = new Set();
+            selectedCells.forEach(cell => {
+                if (cell.hasAttribute('data-row')) {
+                    rowsToDelete.add(parseInt(cell.getAttribute('data-row')));
+                }
+            });
+            
+            if (rowsToDelete.size === 0) {
+                showToast('Cannot delete header row', 'error');
+                return;
+            }
+            
+            // Confirmation
+            if (confirm(`Are you sure you want to delete ${rowsToDelete.size} row(s)?`)) {
+                // Delete rows from bottom to top to avoid index shifting problems
+                Array.from(rowsToDelete)
+                    .sort((a, b) => b - a) // Sort in descending order
+                    .forEach(rowIndex => {
+                        const row = document.querySelector(`tr[data-row="${rowIndex}"]`);
+                        if (row) row.remove();
+                    });
+                
+                // Update indices for remaining rows
+                updateRowIndices();
+                
+                // Clear selection
+                selectedCells = [];
+                
+                showToast(`${rowsToDelete.size} row(s) deleted`, 'success');
+            }
+        }
+        
+        // Delete column function
+        function deleteColumn() {
+            if (selectedCells.length === 0) {
+                showToast('Please select a cell in the column to delete', 'error');
+                return;
+            }
+            
+            // Get unique columns to delete
+            const columnsToDelete = new Set();
+            selectedCells.forEach(cell => {
+                columnsToDelete.add(parseInt(cell.getAttribute('data-col')));
+            });
+            
+            // Confirmation
+            if (confirm(`Are you sure you want to delete ${columnsToDelete.size} column(s)?`)) {
+                // Delete columns from right to left to avoid index shifting problems
+                Array.from(columnsToDelete)
+                    .sort((a, b) => b - a) // Sort in descending order
+                    .forEach(colIndex => {
+                        // Delete header
+                        const headerCell = document.querySelector(`th[data-col="${colIndex}"]`);
+                        if (headerCell) headerCell.remove();
                         
-                        cell.classList.add('formula-cell');
-                        cell.setAttribute('data-formula', cellFormula);
+                        // Delete cells in this column
+                        document.querySelectorAll(`td[data-col="${colIndex}"]`).forEach(cell => {
+                            cell.remove();
+                        });
+                    });
+                
+                // Update indices for remaining columns
+                updateColumnIndices();
+                
+                // Clear selection
+                selectedCells = [];
+                
+                showToast(`${columnsToDelete.size} column(s) deleted`, 'success');
+            }
+        }
+        
+        // Merge cells function
+        function mergeCells() {
+            if (selectedCells.length <= 1) {
+                showToast('Please select multiple cells to merge', 'error');
+                return;
+            }
+            
+            // Get the range of selected cells
+            let minRow = Infinity;
+            let maxRow = -Infinity;
+            let minCol = Infinity;
+            let maxCol = -Infinity;
+            
+            selectedCells.forEach(cell => {
+                const row = parseInt(cell.getAttribute('data-row'));
+                const col = parseInt(cell.getAttribute('data-col'));
+                
+                minRow = Math.min(minRow, row);
+                maxRow = Math.max(maxRow, row);
+                minCol = Math.min(minCol, col);
+                maxCol = Math.max(maxCol, col);
+            });
+            
+            // Ensure the selection is a contiguous rectangle
+            if ((maxRow - minRow + 1) * (maxCol - minCol + 1) !== selectedCells.length) {
+                showToast('Only rectangular cell selections can be merged', 'error');
+                return;
+            }
+            
+            // Get the content from the top-left cell (or concatenate all, based on preference)
+            const topLeftCell = document.querySelector(`td[data-row="${minRow}"][data-col="${minCol}"]`);
+            const content = topLeftCell.querySelector('.editable-cell').innerHTML;
+            
+            // Create merged cell that spans the selection
+            topLeftCell.setAttribute('rowspan', maxRow - minRow + 1);
+            topLeftCell.setAttribute('colspan', maxCol - minCol + 1);
+            topLeftCell.classList.add('merged-cell');
+            
+            // Remove the other cells in the selection
+            selectedCells.forEach(cell => {
+                if (cell !== topLeftCell) {
+                    cell.remove();
+                }
+            });
+            
+            // Set the content in the merged cell
+            const editableDiv = topLeftCell.querySelector('.editable-cell');
+            if (editableDiv) {
+                editableDiv.innerHTML = content;
+            }
+            
+            // Clear selection and keep only the merged cell selected
+            selectedCells.forEach(cell => cell.classList.remove('selected'));
+            selectedCells = [topLeftCell];
+            topLeftCell.classList.add('selected');
+            
+            showToast('Cells merged successfully', 'success');
+        }
+        
+        // Divide merged cell function
+        function divideMergedCell() {
+            if (selectedCells.length !== 1) {
+                showToast('Please select a single merged cell to divide', 'error');
+                return;
+            }
+            
+            const cell = selectedCells[0];
+            
+            // Check if this is actually a merged cell
+            if (!cell.hasAttribute('rowspan') && !cell.hasAttribute('colspan')) {
+                showToast('Selected cell is not a merged cell', 'error');
+                return;
+            }
+            
+            const rowspan = parseInt(cell.getAttribute('rowspan') || 1);
+            const colspan = parseInt(cell.getAttribute('colspan') || 1);
+            
+            if (rowspan === 1 && colspan === 1) {
+                showToast('Selected cell is not a merged cell', 'error');
+                return;
+            }
+            
+            // Get the content and position
+            const content = cell.querySelector('.editable-cell').innerHTML;
+            const rowIndex = parseInt(cell.getAttribute('data-row'));
+            const colIndex = parseInt(cell.getAttribute('data-col'));
+            
+            // Remove the merged attributes
+            cell.removeAttribute('rowspan');
+            cell.removeAttribute('colspan');
+            cell.classList.remove('merged-cell');
+            
+            // Get the table to rebuild cells
+            const table = document.getElementById('sheetTable');
+            
+            // Re-create the missing cells
+            for (let r = rowIndex; r < rowIndex + rowspan; r++) {
+                let row = document.querySelector(`tr[data-row="${r}"]`);
+                
+                // If row doesn't exist (because it was all merged cells), create it
+                if (!row) {
+                    row = document.createElement('tr');
+                    row.setAttribute('data-row', r);
+                    table.querySelector('tbody').appendChild(row);
+                }
+                
+                for (let c = colIndex; c < colIndex + colspan; c++) {
+                    // Skip the top-left cell (original one)
+                    if (r === rowIndex && c === colIndex) continue;
+                    
+                    const newCell = document.createElement('td');
+                    newCell.className = 'sheet-cell';
+                    newCell.setAttribute('data-row', r);
+                    newCell.setAttribute('data-col', c);
+                    
+                    const editableDiv = document.createElement('div');
+                    editableDiv.className = 'editable-cell';
+                    editableDiv.contentEditable = true;
+                    
+                    newCell.appendChild(editableDiv);
+                    
+                    // Add cell to row at the appropriate position
+                    let insertAfter = null;
+                    for (let i = c - 1; i >= 0; i--) {
+                        insertAfter = row.querySelector(`td[data-col="${i}"]`);
+                        if (insertAfter) break;
+                    }
+                    
+                    if (insertAfter) {
+                        insertAfter.after(newCell);
+                    } else {
+                        row.prepend(newCell);
+                    }
+                    
+                    // Add event listener to the new cell
+                    newCell.addEventListener('click', function(e) {
+                        // Skip if clicked on resize handle
+                        if (e.target.classList.contains('row-resize-handle')) return;
                         
-                        // Update display
-                        const editableDiv = cell.querySelector('.editable-cell');
-                        if (editableDiv) {
-                            editableDiv.textContent = cellFormula;
+                        if (e.ctrlKey || e.metaKey) {
+                            // Multi-select
+                            const index = selectedCells.indexOf(this);
+                            if (index !== -1) {
+                                this.classList.remove('selected');
+                                selectedCells.splice(index, 1);
+                            } else {
+                                this.classList.add('selected');
+                                selectedCells.push(this);
+                            }
+                        } else {
+                            // Single select
+                            selectedCells.forEach(c => c.classList.remove('selected'));
+                            selectedCells = [this];
+                            this.classList.add('selected');
                         }
+                        e.stopPropagation();
                     });
                 }
+            }
+            
+            // Add row resize handles where needed
+            document.querySelectorAll('tr').forEach(row => {
+                const rowIndex = parseInt(row.getAttribute('data-row'));
+                const lastCell = row.querySelector(`td[data-col]:last-child`);
+                
+                if (lastCell && !lastCell.querySelector('.row-resize-handle')) {
+                    const resizeHandle = document.createElement('div');
+                    resizeHandle.className = 'row-resize-handle';
+                    resizeHandle.setAttribute('data-row', rowIndex);
+                    resizeHandle.addEventListener('mousedown', startRowResize);
+                    lastCell.appendChild(resizeHandle);
+                }
             });
+            
+            // Update cell indices
+            updateColumnIndices();
+            updateRowIndices();
+            
+            showToast('Cell divided successfully', 'success');
         }
-    }
-
-    // Call this function after sheet is loaded
-    restoreColumnFormulas();
-
-    // Add direct merge button functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const directMergeBtn = document.getElementById('directMergeBtn');
-        if (directMergeBtn) {
-            directMergeBtn.addEventListener('click', function() {
-                console.log('Direct merge button clicked');
-                if (typeof mergeCells === 'function') {
-                    mergeCells();
-                } else {
-                    alert('Merge function not found');
+        
+        // Update row indices after deletion
+        function updateRowIndices() {
+            const rows = document.querySelectorAll('#sheetTable tbody tr');
+            rows.forEach((row, index) => {
+                row.setAttribute('data-row', index);
+                
+                const cells = row.querySelectorAll('td');
+                cells.forEach(cell => {
+                    cell.setAttribute('data-row', index);
+                });
+                
+                // Update resize handle
+                const resizeHandle = row.querySelector('.row-resize-handle');
+                if (resizeHandle) {
+                    resizeHandle.setAttribute('data-row', index);
                 }
             });
         }
+        
+        // Update column indices after deletion
+        function updateColumnIndices() {
+            // First update header row
+            const headers = document.querySelectorAll('#sheetTable thead th');
+            headers.forEach((header, index) => {
+                header.setAttribute('data-col', index);
+                
+                // Update column letter
+                const letterSpan = header.querySelector('.column-letter');
+                if (letterSpan) {
+                    letterSpan.textContent = getColumnLetter(index);
+                }
+                
+                // Update resize handle
+                const resizeHandle = header.querySelector('.column-resize-handle');
+                if (resizeHandle) {
+                    resizeHandle.setAttribute('data-col', index);
+                }
+            });
+            
+            // Update data cells column indices
+            const rows = document.querySelectorAll('#sheetTable tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                cells.forEach((cell, colIndex) => {
+                    cell.setAttribute('data-col', colIndex);
+                });
+            });
+        }
+        
+        // Formula functionality
+        function showFormulaInput(target, selection) {
+            formulaTarget = target; // 'row' or 'column'
+            formulaSelection = selection; // index of row or column
+            
+            formulaInputField.value = '';
+            formulaInput.style.display = 'block';
+            formulaInputField.focus();
+        }
+        
+        function applyFormula() {
+            const formula = formulaInputField.value.trim();
+            
+            if (!formula) {
+                showToast('Please enter a formula', 'error');
+                return;
+            }
+            
+            if (!formula.startsWith('=')) {
+                formulaInputField.value = '=' + formula;
+            }
+            
+            try {
+                if (formulaTarget === 'row') {
+                    // Apply formula to row
+                    const cells = document.querySelectorAll(`td[data-row="${formulaSelection}"]`);
+                    cells.forEach(cell => {
+                        const editableDiv = cell.querySelector('.editable-cell');
+                        if (editableDiv) {
+                            editableDiv.textContent = formulaInputField.value;
+                            cell.classList.add('formula-cell');
+                            cell.setAttribute('data-formula', formulaInputField.value);
+                        }
+                    });
+                    
+                    showToast(`Formula applied to row ${formulaSelection + 1}`, 'success');
+                } else if (formulaTarget === 'column') {
+                    // Apply formula to column
+                    const cells = document.querySelectorAll(`td[data-col="${formulaSelection}"]`);
+                    cells.forEach(cell => {
+                        const editableDiv = cell.querySelector('.editable-cell');
+                        if (editableDiv) {
+                            editableDiv.textContent = formulaInputField.value;
+                            cell.classList.add('formula-cell');
+                            cell.setAttribute('data-formula', formulaInputField.value);
+                        }
+                    });
+                    
+                    showToast(`Formula applied to column ${getColumnLetter(formulaSelection)}`, 'success');
+                }
+                
+                // Hide formula input
+                formulaInput.style.display = 'none';
+            } catch (error) {
+                showToast(`Error applying formula: ${error.message}`, 'error');
+            }
+        }
+        
+        // Apply color to selected cells
+        function applyCellColor(color) {
+            if (selectedCells.length === 0) {
+                showToast('Please select at least one cell first', 'error');
+                return;
+            }
+            
+            selectedCells.forEach(cell => {
+                const editableDiv = cell.querySelector('.editable-cell');
+                if (editableDiv) {
+                    editableDiv.style.backgroundColor = color;
+                }
+            });
+            
+            showToast('Background color applied to selected cell(s)', 'success');
+        }
+        
+        // Apply color to an entire column
+        function applyColumnColor(color) {
+            if (selectedCells.length === 0) {
+                showToast('Please select a cell in the column first', 'error');
+                return;
+            }
+            
+            // Get column index from the first selected cell
+            const firstCell = selectedCells[0];
+            const colIndex = parseInt(firstCell.getAttribute('data-col'));
+            
+            // Apply to all cells in the column
+            document.querySelectorAll(`td[data-col="${colIndex}"], th[data-col="${colIndex}"]`).forEach(cell => {
+                const editableDiv = cell.querySelector('.editable-cell');
+                if (editableDiv) {
+                    editableDiv.style.backgroundColor = color;
+                }
+            });
+            
+            showToast(`Column ${getColumnLetter(colIndex)} color updated`, 'success');
+        }
+        
+        // Apply color to an entire row
+        function applyRowColor(color) {
+            if (selectedCells.length === 0) {
+                showToast('Please select a cell in the row first', 'error');
+                return;
+            }
+            
+            // Get row index from the first selected cell
+            const firstCell = selectedCells[0];
+            let rowIndex = -1;
+            
+            if (firstCell.hasAttribute('data-row')) {
+                rowIndex = parseInt(firstCell.getAttribute('data-row'));
+            } else {
+                // If it's a header cell, set rowIndex to -1 to color the header row
+                if (firstCell.tagName.toLowerCase() === 'th') {
+                    rowIndex = -1;
+                }
+            }
+            
+            // Get all cells in this row
+            let rowCells;
+            if (rowIndex === -1) {
+                // Header row
+                rowCells = document.querySelectorAll('th.sheet-header');
+            } else {
+                // Data row
+                rowCells = document.querySelectorAll(`td[data-row="${rowIndex}"]`);
+            }
+            
+            // Apply color to all cells in the row
+            rowCells.forEach(cell => {
+                const editableDiv = cell.querySelector('.editable-cell');
+                if (editableDiv) {
+                    editableDiv.style.backgroundColor = color;
+                }
+            });
+            
+            showToast(`Row ${rowIndex === -1 ? 'header' : rowIndex + 1} color updated`, 'success');
+        }
+        
+        // Apply color to all header cells
+        function applyHeaderColor(color) {
+            // Get all header cells
+            const headerCells = document.querySelectorAll('th.sheet-header');
+            
+            headerCells.forEach(cell => {
+                const editableDiv = cell.querySelector('.editable-cell');
+                if (editableDiv) {
+                    editableDiv.style.backgroundColor = color;
+                }
+            });
+            
+            showToast('Header color updated', 'success');
+        }
+        
+        // Apply text color to selected cells
+        function applyTextColor(color) {
+            if (selectedCells.length === 0) {
+                showToast('Please select at least one cell first', 'error');
+                return;
+            }
+            
+            selectedCells.forEach(cell => {
+                const editableDiv = cell.querySelector('.editable-cell');
+                if (editableDiv) {
+                    editableDiv.style.color = color;
+                }
+            });
+            
+            showToast('Text color applied to selected cell(s)', 'success');
+        }
+        
+        // Save sheet data
+        function saveSheetData() {
+            const table = document.getElementById('sheetTable');
+            const sheetName = table.getAttribute('data-sheet-name');
+            
+            // Collect all data from the table
+            const headers = [];
+            table.querySelectorAll('thead th').forEach(th => {
+                const editableDiv = th.querySelector('.editable-cell');
+                headers.push(editableDiv ? editableDiv.textContent : '');
+            });
+            
+            const rows = [];
+            table.querySelectorAll('tbody tr').forEach(tr => {
+                const rowData = [];
+                tr.querySelectorAll('td').forEach(td => {
+                    const editableDiv = td.querySelector('.editable-cell');
+                    rowData.push(editableDiv ? editableDiv.textContent : '');
+                });
+                rows.push(rowData);
+            });
+            
+            const data = [headers, ...rows];
+            
+            // Collect formatting info
+            const formatInfo = {
+                cells: {},
+                merges: []
+            };
+            
+            // Get cell formatting
+            table.querySelectorAll('td, th').forEach(cell => {
+                const rowIndex = cell.hasAttribute('data-row') ? parseInt(cell.getAttribute('data-row')) : 0;
+                const colIndex = parseInt(cell.getAttribute('data-col'));
+                const cellRef = `${rowIndex},${colIndex}`;
+                
+                const editableDiv = cell.querySelector('.editable-cell');
+                if (editableDiv && (editableDiv.style.cssText || cell.style.cssText)) {
+                    formatInfo.cells[cellRef] = {
+                        bg_color: editableDiv.style.backgroundColor || null,
+                        text_color: editableDiv.style.color || null,
+                        font_bold: editableDiv.style.fontWeight === 'bold' || editableDiv.classList.contains('bold-text') || false,
+                        font_italic: editableDiv.style.fontStyle === 'italic' || editableDiv.classList.contains('italic-text') || false,
+                        font_underline: editableDiv.style.textDecoration === 'underline' || editableDiv.classList.contains('underline-text') || false,
+                        align: editableDiv.style.textAlign || (
+                            editableDiv.classList.contains('left-aligned') ? 'left' : 
+                            editableDiv.classList.contains('right-aligned') ? 'right' : 'center'
+                        )
+                    };
+                }
+            });
+            
+            // Get merged cells
+            table.querySelectorAll('[rowspan], [colspan]').forEach(cell => {
+                const rowIndex = parseInt(cell.getAttribute('data-row'));
+                const colIndex = parseInt(cell.getAttribute('data-col'));
+                const rowspan = parseInt(cell.getAttribute('rowspan') || 1);
+                const colspan = parseInt(cell.getAttribute('colspan') || 1);
+                
+                formatInfo.merges.push({
+                    first_row: rowIndex,
+                    last_row: rowIndex + rowspan - 1,
+                    first_col: colIndex,
+                    last_col: colIndex + colspan - 1,
+                    content: cell.querySelector('.editable-cell').textContent
+                });
+            });
+            
+            // Send data to server
+            fetch('/save_sheet_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    sheet_name: sheetName,
+                    data: data,
+                    format_info: formatInfo
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showToast('Sheet saved successfully', 'success');
+                } else {
+                    showToast(`Error: ${result.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                showToast(`Error: ${error.message}`, 'error');
+            });
+        }
+        
+        // Initialize color pickers and buttons
+        const bgColorPicker = document.getElementById('bgColorPicker');
+        const textColorPicker = document.getElementById('textColorPicker');
+        
+        // Add event listeners for text formatting
+        document.getElementById('boldBtn')?.addEventListener('click', toggleBold);
+        document.getElementById('italicBtn')?.addEventListener('click', toggleItalic);
+        document.getElementById('underlineBtn')?.addEventListener('click', toggleUnderline);
+        
+        // Add event listeners for alignment
+        document.getElementById('alignLeftBtn')?.addEventListener('click', () => setAlignment('left'));
+        document.getElementById('alignCenterBtn')?.addEventListener('click', () => setAlignment('center'));
+        document.getElementById('alignRightBtn')?.addEventListener('click', () => setAlignment('right'));
+        
+        // Add event listeners for row/column operations
+        document.getElementById('deleteRowBtn')?.addEventListener('click', deleteRow);
+        document.getElementById('deleteColumnBtn')?.addEventListener('click', deleteColumn);
+        
+        // Add event listeners for cell operations
+        document.getElementById('mergeCellsBtn')?.addEventListener('click', mergeCells);
+        document.getElementById('divideCellBtn')?.addEventListener('click', divideMergedCell);
+        
+        // Add event listeners for formula operations
+        document.getElementById('columnFormulaBtn')?.addEventListener('click', function() {
+            if (selectedCells.length === 0) {
+                showToast('Please select a cell in the column first', 'error');
+                return;
+            }
+            showFormulaInput('column', parseInt(selectedCells[0].getAttribute('data-col')));
+        });
+        
+        document.getElementById('rowFormulaBtn')?.addEventListener('click', function() {
+            if (selectedCells.length === 0) {
+                showToast('Please select a cell in the row first', 'error');
+                return;
+            }
+            
+            if (!selectedCells[0].hasAttribute('data-row')) {
+                showToast('Cannot apply formula to header row', 'error');
+                return;
+            }
+            
+            showFormulaInput('row', parseInt(selectedCells[0].getAttribute('data-row')));
+        });
+        
+        // Formula apply/cancel buttons
+        applyFormulaBtn?.addEventListener('click', applyFormula);
+        cancelFormulaBtn?.addEventListener('click', () => {
+            formulaInput.style.display = 'none';
+        });
+        
+        // Add event listeners to color buttons
+        document.getElementById('colorCellBtn')?.addEventListener('click', function() {
+            applyCellColor(bgColorPicker.value);
+        });
+        
+        document.getElementById('colorColumnBtn')?.addEventListener('click', function() {
+            applyColumnColor(bgColorPicker.value);
+        });
+        
+        document.getElementById('colorRowBtn')?.addEventListener('click', function() {
+            applyRowColor(bgColorPicker.value);
+        });
+        
+        document.getElementById('colorHeaderBtn')?.addEventListener('click', function() {
+            applyHeaderColor(bgColorPicker.value);
+        });
+        
+        document.getElementById('textColorPicker')?.addEventListener('change', function() {
+            applyTextColor(this.value);
+        });
+        
+        // Add event listeners to Add Row and Column buttons
+        document.getElementById('addRowBtn')?.addEventListener('click', function() {
+            addNewRow();
+        });
+        
+        document.getElementById('addColumnBtn')?.addEventListener('click', function() {
+            addNewColumn();
+        });
+        
+        // Add event listeners to Move Row/Column buttons
+        document.getElementById('moveRowUpBtn')?.addEventListener('click', function() {
+            moveRowUp();
+        });
+        
+        document.getElementById('moveRowDownBtn')?.addEventListener('click', function() {
+            moveRowDown();
+        });
+        
+        document.getElementById('moveColLeftBtn')?.addEventListener('click', function() {
+            moveColumnLeft();
+        });
+        
+        document.getElementById('moveColRightBtn')?.addEventListener('click', function() {
+            moveColumnRight();
+        });
+        
+        // Add event listener to Save button
+        document.getElementById('saveSheetBtn')?.addEventListener('click', saveSheetData);
+        
+        // Close formula input when clicking outside
+        document.addEventListener('click', function(e) {
+            if (formulaInput.style.display !== 'none' && 
+                !formulaInput.contains(e.target) &&
+                e.target.id !== 'columnFormulaBtn' && 
+                e.target.id !== 'rowFormulaBtn') {
+                formulaInput.style.display = 'none';
+            }
+        });
     });
 </script>
 {% endblock %}

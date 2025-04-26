@@ -388,3 +388,463 @@ pre {
     height: 100%;
     overflow: auto;
 }
+
+/* Color picker styling */
+.color-preview {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #dee2e6;
+    vertical-align: middle;
+    margin-right: 8px;
+    border-radius: 3px;
+}
+
+.color-palette-dropdown {
+    width: 260px;
+    padding: 8px !important;
+}
+
+.color-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.color-row {
+    display: flex;
+    gap: 2px;
+    justify-content: space-between;
+}
+
+.color-cell {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    border: 1px solid #dee2e6;
+    transition: all 0.1s;
+    border-radius: 3px;
+}
+
+.color-cell:hover {
+    transform: scale(1.15);
+    border-color: #6c757d;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    z-index: 2;
+}
+
+.color-cell.selected {
+    box-shadow: 0 0 0 2px #4F81BD, inset 0 0 0 1px white;
+}
+
+.color-section {
+    margin-bottom: 8px;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 8px;
+}
+
+.color-section-title {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+/* Excel-like color picker enhancements */
+.excel-color-theme {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 2px;
+    margin-bottom: 6px;
+}
+
+.standard-colors {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 2px;
+    margin-bottom: 6px;
+}
+
+.no-color-cell {
+    position: relative;
+    background: white;
+}
+
+.no-color-cell::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom right, transparent 45%, #FF0000 45%, #FF0000 55%, transparent 55%);
+}
+
+.custom-color-section {
+    border-top: 1px solid #dee2e6;
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+.color-label {
+    font-size: 12px;
+    display: block;
+    margin-bottom: 4px;
+    color: #495057;
+}
+
+/* Add these styles for the color palette */
+.color-preview {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+}
+
+.color-palette-dropdown {
+    width: 232px; /* 7 colors per row, 28px per color + margins */
+    max-width: 232px;
+}
+
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 28px);
+    grid-gap: 4px;
+    padding: 4px;
+}
+
+.color-cell {
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: transform 0.1s;
+}
+
+.color-cell:hover {
+    transform: scale(1.1);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+.color-cell.selected {
+    border: 2px solid #007bff;
+}
+
+.color-group-label {
+    grid-column: 1 / span 7;
+    font-size: 0.8rem;
+    margin-top: 6px;
+    color: #666;
+    font-weight: 500;
+}
+
+/* Format panel styles */
+.formatting-panel {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.preview-container {
+    background: #fff;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
+.preview-text {
+    padding: 10px;
+    border-radius: 2px;
+}
+
+/* Responsive adjustments for the formatting panel */
+@media (max-width: 768px) {
+    .color-palette-dropdown {
+        width: 200px;
+    }
+    
+    .color-grid {
+        grid-template-columns: repeat(6, 28px);
+    }
+    
+    .color-group-label {
+        grid-column: 1 / span 6;
+    }
+}
+
+/* Excel-like grid styles */
+.sheet-table {
+    border: 1px solid #dee2e6;
+    background-color: white;
+}
+
+.sheet-header {
+    background-color: #e9ecef;
+    text-align: center;
+    font-weight: bold;
+}
+
+.row-header {
+    background-color: #e9ecef;
+    text-align: center;
+    font-weight: bold;
+}
+
+.cell-menu {
+    position: absolute;
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    padding: 5px 0;
+}
+
+.cell-menu-item {
+    padding: 5px 15px;
+    cursor: pointer;
+}
+
+.cell-menu-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Excel-like toolbar */
+.excel-toolbar {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.excel-toolbar .btn-group {
+    margin-right: 10px;
+}
+
+/* Cell selection styling */
+.selected-range {
+    background-color: rgba(79, 129, 189, 0.3);
+    border: 2px solid #4F81BD;
+    z-index: 1;
+}
+
+/* Add dropdown inside menu items */
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -6px;
+    margin-left: -1px;
+}
+
+.dropdown-submenu:hover > .dropdown-menu {
+    display: block;
+}
+
+/* Formula bar */
+.formula-bar {
+    display: flex;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 5px;
+    margin-bottom: 5px;
+}
+
+.formula-bar .cell-address {
+    width: 100px;
+    background-color: white;
+    border: 1px solid #ced4da;
+    padding: 5px;
+    margin-right: 5px;
+    font-weight: bold;
+}
+
+.formula-bar .formula-input {
+    flex-grow: 1;
+    border: 1px solid #ced4da;
+    padding: 5px;
+}
+
+/* Cell status indicators */
+.cell-status-indicator {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 6px;
+}
+
+.has-formula {
+    background-color: #28a745;
+}
+
+.has-error {
+    background-color: #dc3545;
+}
+
+.has-comment {
+    background-color: #ffc107;
+}
+
+/* Color Palette Styling */
+.color-palette-dropdown {
+    padding: 10px;
+    min-width: 220px;
+}
+
+.color-section {
+    margin-bottom: 15px;
+}
+
+.color-section-title {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.excel-color-theme, .standard-colors {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 2px;
+}
+
+.color-cell {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    position: relative;
+}
+
+.color-cell:hover {
+    transform: scale(1.1);
+    z-index: 1;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+.color-cell.selected {
+    border: 2px solid #000;
+    box-shadow: 0 0 3px rgba(0,0,0,0.5);
+}
+
+.no-color-cell {
+    background: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.no-color-line {
+    position: absolute;
+    width: 140%;
+    height: 2px;
+    background-color: #ff0000;
+    top: 50%;
+    left: -20%;
+    transform: rotate(45deg);
+}
+
+.custom-color-section {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.color-label {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Color preview span in dropdown buttons */
+.color-preview {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 1px solid #ddd;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+/* Color palette styles */
+.color-palette-dropdown {
+    padding: 10px;
+    width: 220px;
+}
+
+.color-section {
+    margin-bottom: 15px;
+}
+
+.color-section-title {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.excel-color-theme, .standard-colors {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+}
+
+.color-cell {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    position: relative;
+}
+
+.color-cell:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 3px rgba(0,0,0,0.3);
+}
+
+.color-cell.selected {
+    border: 2px solid #333;
+}
+
+/* Improved No Color styling */
+.no-color-cell {
+    position: relative;
+    background-color: white;
+    border: 1px solid #ddd;
+}
+
+.no-color-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom right, transparent calc(50% - 1px), #ff0000, transparent calc(50% + 1px));
+    pointer-events: none;
+}
+
+.color-preview.no-color-cell {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.custom-color-section {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.color-label {
+    margin-right: 10px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+input[type="color"] {
+    width: 100px;
+    height: 30px;
+}
