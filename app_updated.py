@@ -48,22 +48,29 @@ load_dotenv()
 # Initialize app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-app.config['UPLOAD_FOLDER'] = 'uploads'
+
+# Database configuration for both local development and Render deployment
+import os
+
+# for local dev
+db_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'app.db')
+
+# for Render deploy (save db inside /tmp/)
+if os.environ.get('RENDER'):
+    db_file = '/tmp/app.db'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_file
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.logger.setLevel(logging.DEBUG)
 
-# Configuration
+# Configuration for uploads
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['ALLOWED_EXTENSIONS'] = {'xlsx', 'xls'}
+app.config['ALLOWED_EXTENSIONS'] = ALLOWED_EXTENSIONS  # Use the variable defined above
 
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
-
-# Initialize login manager
+# Initialize login manager - Move this section before using any login functionality
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -76,13 +83,7 @@ def load_user(user_id):
 db.init_app(app)
 migrate = Migrate(app, db)
 
-def init_db():
-    with app.app_context():
-        # Drop all tables
-        db.drop_all()
-        # Create all tables
-        db.create_all()
-
+# Ensure database tables exist
 with app.app_context():
     db.create_all()
 
@@ -644,10 +645,6 @@ def update_header_color():
             return jsonify({'success': False, 'error': 'Sheet not found'})
         
         # Parse the sheet data
-        sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
-        
-        # Check if sheet_data is a dict with format_metadata
-        if isinstance(sheet_data, dict):
         sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
         
         # Check if sheet_data is a dict with format_metadata
