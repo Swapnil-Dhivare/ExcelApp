@@ -1,1 +1,1 @@
-web: gunicorn Application.app_updated:app
+web: gunicorn app_updated:app
