@@ -648,6 +648,10 @@ def update_header_color():
         
         # Check if sheet_data is a dict with format_metadata
         if isinstance(sheet_data, dict):
+        sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+        
+        # Check if sheet_data is a dict with format_metadata
+        if isinstance(sheet_data, dict):
             format_metadata = sheet_data.get('format_metadata', {})
         else:
             # Convert to the new format if it's just an array
@@ -1107,6 +1111,134 @@ def add_to_templates(download_id):
     except Exception as e:
         app.logger.error(f"Error adding template: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/download_historic/<int:download_id>')
+@login_required
+def download_historic(download_id):
+    """Download a previously downloaded Excel file from history"""
+    try:
+        # Get the download history record
+        download = DownloadHistory.query.get_or_404(download_id)
+        
+        # Check if the download belongs to the current user
+        if download.user_id != current_user.id:
+            flash('You do not have permission to access this file', 'error')
+            return redirect(url_for('view_history'))
+            
+        # Parse the sheet data
+        sheet_data_json = json.loads(download.sheet_data) if isinstance(download.sheet_data, str) else download.sheet_data
+        
+        # Create a new workbook
+        workbook = Workbook()
+        # Remove default sheet
+        if 'Sheet' in workbook.sheetnames:
+            workbook.remove(workbook.active)
+            
+        # Process each sheet from history
+        for sheet_info in sheet_data_json:
+            sheet_name = sheet_info.get('sheet_name', 'Sheet')
+            
+            # Fetch actual sheet data from database if possible
+            sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first()
+            
+            if sheet:
+                # We found the original sheet, use its current data
+                sheet_data = json.loads(sheet.data) if isinstance(sheet.data, str) else sheet.data
+                
+                # Extract actual data array if needed
+                if isinstance(sheet_data, dict) and 'data' in sheet_data:
+                    data = sheet_data['data']
+                    format_metadata = sheet_data.get('format_metadata', {})
+                    merged_cells = sheet_data.get('merged_cells', [])
+                else:
+                    data = sheet_data
+                    format_metadata = {}
+                    merged_cells = []
+            else:
+                # Sheet doesn't exist anymore, create a simple placeholder
+                ws = workbook.create_sheet(title=sheet_name[:31])  # Excel limits sheet names to 31 chars
+                ws.append(['This sheet is no longer available'])
+                continue
+                
+            # Create worksheet
+            ws = workbook.create_sheet(title=sheet_name[:31])
+            
+            # Write data
+            if data:
+                for row_idx, row_data in enumerate(data):
+                    for col_idx, cell_value in enumerate(row_data):
+                        cell = ws.cell(row=row_idx + 1, column=col_idx + 1)
+                        
+                        # Handle formulas
+                        if isinstance(cell_value, str) and cell_value.startswith('='):
+                            cell.value = cell_value
+                        else:
+                            cell.value = cell_value
+                            
+                        # Apply formatting if available
+                        cell_ref = f"{get_column_letter(col_idx + 1)}{row_idx + 1}"
+                        if cell_ref in format_metadata:
+                            fmt = format_metadata[cell_ref]
+                            
+                            # Apply background color
+                            if 'bg_color' in fmt:
+                                fill = PatternFill(start_color=fmt['bg_color'].replace('#', ''),
+                                                  end_color=fmt['bg_color'].replace('#', ''), 
+                                                  fill_type="solid")
+                                cell.fill = fill
+                                
+                            # Apply text color
+                            if 'text_color' in fmt:
+                                font = Font(color=fmt['text_color'].replace('#', ''))
+                                cell.font = font
+                                
+                            # Apply text alignment
+                            if 'align' in fmt:
+                                alignment = Alignment(horizontal=fmt['align'])
+                                cell.alignment = alignment
+                                
+                            # Apply font formatting
+                            if 'font_bold' in fmt and fmt['font_bold']:
+                                if not cell.font:
+                                    cell.font = Font(bold=True)
+                                else:
+                                    cell.font = Font(bold=True, color=cell.font.color)
+            
+            # Apply merges
+            for merge in merged_cells:
+                first_row = merge.get('first_row', 0)
+                last_row = merge.get('last_row', 0)
+                first_col = merge.get('first_col', 0)
+                last_col = merge.get('last_col', 0)
+                
+                # Convert to Excel's 1-based indexing and column letters
+                start_cell = f"{get_column_letter(first_col + 1)}{first_row + 1}"
+                end_cell = f"{get_column_letter(last_col + 1)}{last_row + 1}"
+                
+                # Apply merge
+                ws.merge_cells(f"{start_cell}:{end_cell}")
+                
+                # Set content in merged cell if available
+                if 'content' in merge:
+                    ws.cell(row=first_row + 1, column=first_col + 1).value = merge.get('content', '')
+                    
+        # Save to bytes buffer
+        output = io.BytesIO()
+        workbook.save(output)
+        output.seek(0)
+        
+        # Send the file
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=download.filename,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        
+    except Exception as e:
+        app.logger.error(f"Error downloading historic file: {str(e)}")
+        flash(f"Error: {str(e)}", 'error')
+        return redirect(url_for('view_history'))
 
 @app.route('/profile')
 @login_required

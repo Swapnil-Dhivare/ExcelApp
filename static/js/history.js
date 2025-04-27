@@ -1,9 +1,12 @@
 function addToTemplates(downloadId) {
+    // Get CSRF token from the meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
     fetch(`/add_to_templates/${downloadId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            'X-CSRFToken': csrfToken
         }
     })
     .then(response => {
