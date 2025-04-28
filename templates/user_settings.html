@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}User Settings - Excel Generator{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Settings</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#account-settings" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                        <i class="bi bi-person me-2"></i> Account Settings
+                    </a>
+                    <a href="#password" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                        <i class="bi bi-key me-2"></i> Change Password
+                    </a>
+                    <a href="#appearance" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                        <i class="bi bi-palette me-2"></i> Appearance
+                    </a>
+                    <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                        <i class="bi bi-bell me-2"></i> Notifications
+                    </a>
+                    <a href="#privacy" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                        <i class="bi bi-shield-lock me-2"></i> Privacy
+                    </a>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('user_profile') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- Account Settings Tab -->
+                <div class="tab-pane fade show active" id="account-settings">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Account Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="account-form">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" value="{{ current_user.username }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" value="{{ current_user.email }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="fullName" class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" id="fullName" value="{{ current_user.name }}">
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save me-2"></i>Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Password Tab -->
+                <div class="tab-pane fade" id="password">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Change Password</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="password-form">
+                                <div class="mb-3">
+                                    <label for="currentPassword" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="currentPassword" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newPassword" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="newPassword" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirmPassword" required>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-key me-2"></i>Change Password
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Appearance Tab -->
+                <div class="tab-pane fade" id="appearance">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Appearance Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="appearance-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Theme</label>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="theme" id="lightTheme" value="light" checked>
+                                                <label class="form-check-label" for="lightTheme">
+                                                    Light
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="theme" id="darkTheme" value="dark">
+                                                <label class="form-check-label" for="darkTheme">
+                                                    Dark
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="theme" id="systemTheme" value="system">
+                                                <label class="form-check-label" for="systemTheme">
+                                                    System Default
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="fontSize" class="form-label">Font Size</label>
+                                    <select class="form-select" id="fontSize">
+                                        <option value="small">Small</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="large">Large</option>
+                                    </select>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save me-2"></i>Save Preferences
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notifications Tab -->
+                <div class="tab-pane fade" id="notifications">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Notification Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="notification-form">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                                        <label class="form-check-label" for="emailNotifications">Email Notifications</label>
+                                    </div>
+                                    <div class="text-muted small">Receive notifications about your account via email</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="browserNotifications">
+                                        <label class="form-check-label" for="browserNotifications">Browser Notifications</label>
+                                    </div>
+                                    <div class="text-muted small">Receive notifications in your browser</div>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save me-2"></i>Save Preferences
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Privacy Tab -->
+                <div class="tab-pane fade" id="privacy">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">Privacy Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="privacy-form">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="profilePublic">
+                                        <label class="form-check-label" for="profilePublic">Make profile public</label>
+                                    </div>
+                                    <div class="text-muted small">Allow others to see your profile information</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="sheetsPublic">
+                                        <label class="form-check-label" for="sheetsPublic">Make sheets public by default</label>
+                                    </div>
+                                    <div class="text-muted small">New sheets will be visible to others by default</div>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save me-2"></i>Save Preferences
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4 mb-5"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle form submissions (dummy implementation for now)
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Show a success message
+                const formId = this.id;
+                let message = '';
+                
+                switch(formId) {
+                    case 'account-form':
+                        message = 'Account settings updated successfully!';
+                        break;
+                    case 'password-form':
+                        message = 'Password changed successfully!';
+                        break;
+                    case 'appearance-form':
+                        message = 'Appearance preferences saved!';
+                        break;
+                    case 'notification-form':
+                        message = 'Notification settings updated!';
+                        break;
+                    case 'privacy-form':
+                        message = 'Privacy settings updated!';
+                        break;
+                    default:
+                        message = 'Settings updated successfully!';
+                }
+                
+                // Use the global toast if available, otherwise use alert
+                if (typeof window.showToast === 'function') {
+                    window.showToast(message, 'success');
+                } else {
+                    alert(message);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

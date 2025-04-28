@@ -16,6 +16,20 @@ app.config.from_pyfile('config.py')
 # Initialize CSRF protection
 csrf = CSRFProtect(app)
 
+# Add this new context processor somewhere near the top of the file, after app initialization but before route definitions
+@app.context_processor
+def utility_processor():
+    """Add utility functions to Jinja context"""
+    def route_exists(route_name):
+        """Check if a route exists in the Flask app"""
+        try:
+            url_for(route_name)
+            return True
+        except:
+            return False
+            
+    return dict(route_exists=route_exists)
+
 # Initialize database
 db = SQLAlchemy(app)
 
