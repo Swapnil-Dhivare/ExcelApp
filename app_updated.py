@@ -1,11 +1,12 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from templates import get_built_in_templates
 from flask_wtf.csrf import CSRFProtect  # Add this import for CSRF protection
+import pandas as pd
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -380,36 +381,90 @@ def track_download(sheet_id, filename, format_type, file_path=None):
         return download
     return None
 
-@app.route('/export/<sheet_name>/<format_type>')
+@app.route('/export_sheet/<sheet_name>/<format_type>')
 @login_required
 def export_sheet(sheet_name, format_type):
-    """Export a sheet to various formats and track the download"""
-    sheet = Sheet.query.filter_by(user_id=current_user.id, sheet_name=sheet_name).first_or_404()
+    """Export a sheet to the specified format"""
+    # Find the sheet
+    sheet = Sheet.query.filter_by(sheet_name=sheet_name, user_id=current_user.id).first_or_404()
     
-    if format_type not in ['xlsx', 'csv', 'pdf']:
-        flash('Unsupported format', 'error')
+    # Create export directory if it doesn't exist
+    export_dir = os.path.join(app.root_path, 'exports')
+    os.makedirs(export_dir, exist_ok=True)
+    
+    # Generate a unique filename
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"{sheet_name}_{timestamp}"
+    
+    # Export based on format
+    if format_type.lower() == 'xlsx':
+        # Export to Excel
+        filepath = os.path.join(export_dir, f"{filename}.xlsx")
+        
+        # Use pandas to create Excel file
+        df = pd.DataFrame(sheet.data[1:], columns=sheet.data[0])
+        df.to_excel(filepath, index=False)
+        
+        # Add to download history
+        add_download_history(sheet_name, 'xlsx', filepath)
+        
+        # Return file for download
+        return send_file(filepath, 
+                         as_attachment=True,
+                         download_name=f"{sheet_name}.xlsx",
+                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    
+    elif format_type.lower() == 'csv':
+        # Export to CSV
+        filepath = os.path.join(export_dir, f"{filename}.csv")
+        
+        # Use pandas to create CSV file
+        df = pd.DataFrame(sheet.data[1:], columns=sheet.data[0])
+        df.to_csv(filepath, index=False)
+        
+        # Add to download history
+        add_download_history(sheet_name, 'csv', filepath)
+        
+        # Return file for download
+        return send_file(filepath,
+                         as_attachment=True,
+                         download_name=f"{sheet_name}.csv",
+                         mimetype='text/csv')
+    
+    elif format_type.lower() == 'pdf':
+        # Export to PDF
+        filepath = os.path.join(export_dir, f"{filename}.pdf")
+        
+        # Generate PDF
+        create_pdf(sheet.data, filepath)
+        
+        # Add to download history
+        add_download_history(sheet_name, 'pdf', filepath)
+        
+        # Return file for download
+        return send_file(filepath,
+                         as_attachment=True,
+                         download_name=f"{sheet_name}.pdf",
+                         mimetype='application/pdf')
+    
+    else:
+        flash(f"Unsupported export format: {format_type}", "danger")
         return redirect(url_for('edit_sheet', sheet_name=sheet_name))
-    
-    # Generate the file (implementation depends on your export functions)
-    filename = f"{sheet_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{format_type}"
-    
-    # Track the download
-    download = track_download(sheet.id, filename, format_type)
-    
-    # Return the file download response
-    # This is a placeholder - implement your actual file generation and serving logic
-    if format_type == 'xlsx':
-        # Generate Excel file
-        pass
-    elif format_type == 'csv':
-        # Generate CSV file
-        pass
-    elif format_type == 'pdf':
-        # Generate PDF file
-        pass
-    
-    flash(f'File exported successfully as {format_type.upper()}', 'success')
-    return redirect(url_for('edit_sheet', sheet_name=sheet_name))
+
+def add_download_history(sheet_name, format_type, filepath):
+    """Add entry to download history"""
+    try:
+        download = DownloadHistory(
+            user_id=current_user.id,
+            sheet_name=sheet_name,
+            format_type=format_type,
+            download_date=datetime.now(),
+            file_path=filepath
+        )
+        db.session.add(download)
+        db.session.commit()
+    except Exception as e:
+        app.logger.error(f"Error recording download: {str(e)}")
 
 @app.route('/add_to_templates/<int:download_id>')
 @login_required

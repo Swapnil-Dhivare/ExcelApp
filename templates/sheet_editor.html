@@ -226,12 +226,21 @@
                 <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-file-earmark-arrow-down"></i> Export
                 </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='xlsx') }}">Excel (.xlsx)</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='csv') }}">CSV (.csv)</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='pdf') }}">PDF (.pdf)</a></li>
+                <ul class="dropdown-menu download-menu">
+                    <li><h6 class="dropdown-header">Download Options</h6></li>
+                    <li><a class="dropdown-item export-link" download href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='xlsx') }}">
+                        <i class="bi bi-file-earmark-excel"></i> Excel (.xlsx)
+                    </a></li>
+                    <li><a class="dropdown-item export-link" download href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='csv') }}">
+                        <i class="bi bi-file-earmark-text"></i> CSV (.csv)
+                    </a></li>
+                    <li><a class="dropdown-item export-link" download href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='pdf') }}">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF (.pdf)
+                    </a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{{ url_for('download_history') }}">View Download History</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('download_history') }}">
+                        <i class="bi bi-clock-history"></i> View Download History
+                    </a></li>
                 </ul>
             </div>
             <button class="btn btn-sm btn-light" onclick="window.location.href='{{ url_for('index') }}'" title="Close Sheet">
@@ -484,7 +493,7 @@
 <script src="{{ url_for('static', filename='js/header-formatting.js') }}"></script>
 <script src="{{ url_for('static', filename='js/format-button.js') }}"></script>
 <script src="{{ url_for('static', filename='js/excel-grid-operations.js') }}"></script>
-<script src="{{ url_for('static', filename='js/keyboard-shortcuts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/export-handler.js') }}"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

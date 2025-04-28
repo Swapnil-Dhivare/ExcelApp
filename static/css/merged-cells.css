@@ -1,11 +1,13 @@
 /* Styling for merged cells */
 
-/* Improved merged cell styling */
+/* Merged cell styling */
 .merged-cell {
     background-color: #ffffff !important;
     border: 1px solid #dee2e6 !important;
     position: relative;
     z-index: 3;
+    box-shadow: inset 0 0 0 1px #ffffff;
+    transition: background-color 0.15s ease;
 }
 
 .merged-cell .editable-cell {
@@ -16,7 +18,9 @@
     height: 100% !important;
     overflow: hidden !important;
     padding: 0.25rem !important;
-    position: relative;
+    white-space: normal !important;
+    word-break: break-word;
+    text-overflow: initial;
 }
 
 .merged-cell.selected {
@@ -36,6 +40,10 @@
 }
 
 .sheet-table .merged-cell:hover {
+    background-color: #f8f9fa !important;
+}
+
+.merged-cell:hover {
     background-color: #f8f9fa !important;
 }
 
