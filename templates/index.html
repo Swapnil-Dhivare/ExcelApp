@@ -1,184 +1,225 @@
 {% extends "base.html" %}
 
+{% block title %}Home - Excel Generator{% endblock %}
+
+{% block body_class %}index-page{% endblock %}
+
+{% block styles %}
+<style>
+    .sheet-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .sheet-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .sheet-options {
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s, opacity 0.2s ease;
+    }
+    
+    .sheet-card:hover .sheet-options {
+        visibility: visible;
+        opacity: 1;
+    }
+    
+    .empty-state {
+        padding: 60px 0;
+    }
+    
+    .jumbotron {
+        background-color: #f8f9fa;
+        padding: 2rem;
+        border-radius: 0.3rem;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- Welcome Banner -->
-<div class="welcome-banner">
-    <div class="container">
-        <h1>Welcome, {{ current_user.name }}! 👋</h1>
-        <p class="lead">Create and manage your Excel sheets with automatic calculations</p>
+<div class="container mt-4">
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+        <div class="container">
+            <h1>Welcome, {{ current_user.name }}! 👋</h1>
+            <p class="lead">Create and manage your Excel sheets with automatic calculations</p>
+        </div>
     </div>
-</div>
 
-<div class="container">
-    <div class="row">
-        <!-- Main Content -->
-        <div class="col-md-8">
-            <!-- Features Overview -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <i class="bi bi-calculator feature-icon"></i>
-                        <h5>Auto Calculations</h5>
-                        <p class="text-muted">Total columns calculate automatically</p>
+    <div class="container">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-md-8">
+                <!-- Features Overview -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="feature-card">
+                            <i class="bi bi-calculator feature-icon"></i>
+                            <h5>Auto Calculations</h5>
+                            <p class="text-muted">Total columns calculate automatically</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-card">
+                            <i class="bi bi-highlighter feature-icon"></i>
+                            <h5>Highlighted Totals</h5>
+                            <p class="text-muted">Total columns are highlighted in yellow</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-card">
+                            <i class="bi bi-file-earmark-excel feature-icon"></i>
+                            <h5>Excel Compatible</h5>
+                            <p class="text-muted">Download as Excel with formulas</p>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <i class="bi bi-highlighter feature-icon"></i>
-                        <h5>Highlighted Totals</h5>
-                        <p class="text-muted">Total columns are highlighted in yellow</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <i class="bi bi-file-earmark-excel feature-icon"></i>
-                        <h5>Excel Compatible</h5>
-                        <p class="text-muted">Download as Excel with formulas</p>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Sheets List -->
-            <div class="card sheet-card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="sheet-header mb-0">Your Sheets</h5>
-                    <a href="{{ url_for('add_sheet') }}" class="btn btn-primary btn-action">
-                        <i class="bi bi-plus-lg"></i> Add Sheet
-                    </a>
-                </div>
-                <div class="card-body">
-                    {% if current_user.sheets %}
-                        <div class="list-group">
-                        {% for sheet in current_user.sheets %}
-                            <div class="list-group-item sheet-card">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h5 class="sheet-header">{{ sheet.sheet_name }}</h5>
-                                        <small class="sheet-meta">Created: {{ sheet.created_at.strftime('%Y-%m-%d') }}</small>
-                                    </div>
-                                    <div class="btn-group">
-                                        <a href="{{ url_for('edit_sheet', sheet_name=sheet.sheet_name) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-pencil-square"></i> Edit
-                                        </a>
-                                        <button class="btn btn-sm btn-outline-secondary" onclick="loadSheetPreview('{{ sheet.sheet_name }}')">
-                                            <i class="bi bi-eye"></i> Preview
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="removeSheet('{{ sheet.sheet_name }}')">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                <!-- Sheets List -->
+                <div class="card sheet-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="sheet-header mb-0">Your Sheets</h5>
+                        <a href="{{ url_for('add_sheet') }}" class="btn btn-primary btn-action">
+                            <i class="bi bi-plus-lg"></i> Add Sheet
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        {% if current_user.sheets %}
+                            <div class="list-group">
+                            {% for sheet in current_user.sheets %}
+                                <div class="list-group-item sheet-card">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="sheet-header">{{ sheet.sheet_name }}</h5>
+                                            <small class="sheet-meta">Created: {{ sheet.created_at.strftime('%Y-%m-%d') }}</small>
+                                        </div>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('edit_sheet', sheet_name=sheet.sheet_name) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil-square"></i> Edit
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="loadSheetPreview('{{ sheet.sheet_name }}')">
+                                                <i class="bi bi-eye"></i> Preview
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="removeSheet('{{ sheet.sheet_name }}')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
+                            {% endfor %}
                             </div>
-                        {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i class="bi bi-file-earmark-spreadsheet display-1 text-muted"></i>
-                            <h5 class="mt-3">No sheets yet</h5>
-                            <p class="text-muted">Create your first sheet to get started!</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Guide Sidebar -->
-        <div class="col-md-4">
-            <!-- Quick Start Guide -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Quick Start Guide</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <h6><i class="bi bi-1-circle"></i> Create a Sheet</h6>
-                        <p class="small text-muted">Click "Add Sheet" and enter your data using commas and semicolons.</p>
-                    </div>
-                    <div class="mb-4">
-                        <h6><i class="bi bi-2-circle"></i> Auto Calculations</h6>
-                        <p class="small text-muted">Total columns will automatically sum up assignment scores.</p>
-                    </div>
-                    <div>
-                        <h6><i class="bi bi-3-circle"></i> Download & Share</h6>
-                        <p class="small text-muted">Download your Excel file with working formulas!</p>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-file-earmark-spreadsheet display-1 text-muted"></i>
+                                <h5 class="mt-3">No sheets yet</h5>
+                                <p class="text-muted">Create your first sheet to get started!</p>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
-            <!-- Formula Guide -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Formula Guide</h5>
+            <!-- Quick Guide Sidebar -->
+            <div class="col-md-4">
+                <!-- Quick Start Guide -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Quick Start Guide</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h6><i class="bi bi-1-circle"></i> Create a Sheet</h6>
+                            <p class="small text-muted">Click "Add Sheet" and enter your data using commas and semicolons.</p>
+                        </div>
+                        <div class="mb-4">
+                            <h6><i class="bi bi-2-circle"></i> Auto Calculations</h6>
+                            <p class="small text-muted">Total columns will automatically sum up assignment scores.</p>
+                        </div>
+                        <div>
+                            <h6><i class="bi bi-3-circle"></i> Download & Share</h6>
+                            <p class="small text-muted">Download your Excel file with working formulas!</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-info">
-                        <h6><i class="bi bi-lightbulb"></i> Auto-Calculate Example</h6>
-                        <pre class="small mb-0">
+
+                <!-- Formula Guide -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Formula Guide</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-lightbulb"></i> Auto-Calculate Example</h6>
+                            <pre class="small mb-0">
 Sr No,Name,Roll No,ASS1,ASS2,ASS3,Total
 1,John,101,85,90,88,=SUM(D2:F2)
-                        </pre>
-                    </div>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">
-                            <i class="bi bi-check-circle text-success"></i>
-                            <strong>Total column</strong> will be highlighted green
-                        </li>
-                        <li>
-                            <i class="bi bi-check-circle text-success"></i>
-                            <strong>Formulas</strong> calculate automatically
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Sample Templates -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Sample Templates</h5>
-                </div>
-                <div class="list-group list-group-flush">
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">Assignment Sheet</h6>
-                                <small class="text-muted">With auto-calculations</small>
-                            </div>
-                            <i class="bi bi-file-earmark-excel"></i>
+                            </pre>
                         </div>
-                    </a>
-                    <!-- Add more template options -->
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success"></i>
+                                <strong>Total column</strong> will be highlighted green
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle text-success"></i>
+                                <strong>Formulas</strong> calculate automatically
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Sample Templates -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Sample Templates</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Assignment Sheet</h6>
+                                    <small class="text-muted">With auto-calculations</small>
+                                </div>
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </div>
+                        </a>
+                        <!-- Add more template options -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add backup backdrop div -->
+    <div class="modal-backdrop fade d-none" id="backup-backdrop"></div>
+
+    <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title" id="previewModalLabel">Sheet Preview</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table id="previewTable" class="table table-bordered">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSheetChanges()">Save Changes</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Add backup backdrop div -->
-<div class="modal-backdrop fade d-none" id="backup-backdrop"></div>
-
-<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title" id="previewModalLabel">Sheet Preview</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="table-responsive">
-                    <table id="previewTable" class="table table-bordered">
-                        <thead></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="saveSheetChanges()">Save Changes</button>
-            </div>
-        </div>
-    </div>
-</div>
+{% endblock %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/preview.js') }}"></script>
-{% endblock %}

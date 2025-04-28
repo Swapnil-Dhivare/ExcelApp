@@ -2,34 +2,12 @@
  * Excel format button functionality
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Get the format button and panel
-    const formatButton = document.getElementById('toggleFormatPanel');
-    const formatPanel = document.querySelector('.formatting-panel');
+    // Initialize formatting buttons
+    initFormatButtons();
     
-    if (formatButton && formatPanel) {
-        // Set initial state
-        formatPanel.style.display = 'none';
-        
-        // Add click handler
-        formatButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Toggle format panel visibility
-            if (formatPanel.style.display === 'none') {
-                formatPanel.style.display = 'block';
-                formatButton.classList.add('active');
-            } else {
-                formatPanel.style.display = 'none';
-                formatButton.classList.remove('active');
-            }
-        });
-        
-        // Initialize all formatting buttons
-        initFormatButtons();
-    }
-    
-    // Initialize all formatting buttons
+    /**
+     * Initialize all formatting buttons
+     */
     function initFormatButtons() {
         // Bold button
         document.getElementById('boldBtn')?.addEventListener('click', function() {
@@ -125,6 +103,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         showToast(`Applied ${format} formatting`, 'success');
+        
+        // Mark sheet as modified
+        if (window.markSheetModified) {
+            window.markSheetModified();
+        }
     }
     
     // Apply text alignment
@@ -142,6 +125,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         showToast(`Applied ${alignment} alignment`, 'success');
+        
+        // Mark sheet as modified
+        if (window.markSheetModified) {
+            window.markSheetModified();
+        }
     }
     
     // Apply background color
@@ -156,6 +144,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         showToast('Applied background color', 'success');
+        
+        // Mark sheet as modified
+        if (window.markSheetModified) {
+            window.markSheetModified();
+        }
     }
     
     // Apply text color
@@ -173,6 +166,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         showToast('Applied text color', 'success');
+        
+        // Mark sheet as modified
+        if (window.markSheetModified) {
+            window.markSheetModified();
+        }
     }
     
     // Show toast notification
@@ -182,47 +180,14 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Fallback toast implementation
             console.log(`${type}: ${message}`);
-            
-            // Create toast container if it doesn't exist
-            let toastContainer = document.querySelector('.toast-container');
-            if (!toastContainer) {
-                toastContainer = document.createElement('div');
-                toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-                document.body.appendChild(toastContainer);
-            }
-            
-            // Create toast
-            const toastEl = document.createElement('div');
-            toastEl.className = `toast show`;
-            
-            // Set color based on type
-            const bgClass = type === 'error' ? 'bg-danger' : 
-                           type === 'success' ? 'bg-success' : 
-                           type === 'warning' ? 'bg-warning' : 'bg-info';
-            
-            toastEl.innerHTML = `
-                <div class="toast-header ${bgClass} text-white">
-                    <strong class="me-auto">Excel Generator</strong>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-                </div>
-                <div class="toast-body">
-                    ${message}
-                </div>
-            `;
-            
-            // Add to container
-            toastContainer.appendChild(toastEl);
-            
-            // Auto remove after delay
-            setTimeout(() => {
-                toastEl.remove();
-            }, 3000);
         }
     }
     
     // Expose formatting functions globally
-    window.applyFormatting = applyFormatting;
-    window.applyTextAlign = applyTextAlign;
-    window.applyBackgroundColor = applyBackgroundColor;
-    window.applyTextColor = applyTextColor;
+    window.excelFormatting = {
+        applyFormatting,
+        applyTextAlign,
+        applyBackgroundColor,
+        applyTextColor
+    };
 });

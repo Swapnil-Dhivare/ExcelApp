@@ -1141,3 +1141,62 @@ body:not(.sheet-editor-page) {
         padding: 0.5rem 0;
     }
 }
+
+/* Fix scrolling issues */
+html, body {
+    height: 100%;
+}
+
+/* Only apply overflow hidden to sheet editor page */
+body:not(.sheet-editor-page) {
+    overflow-y: auto !important;
+    height: auto;
+    min-height: 100%;
+}
+
+/* Proper scroll behavior for main content area */
+main {
+    display: block;
+    min-height: calc(100vh - 150px); /* Account for header and footer */
+    padding-bottom: 30px; /* Add some bottom padding */
+}
+
+/* Make sure fixed elements don't interfere with scrolling */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
+/* Fix container margins for better spacing */
+.container {
+    padding-bottom: 1rem;
+}
+
+/* Fix modal scrolling */
+.modal-dialog {
+    max-height: 90vh;
+    margin: 1rem auto;
+}
+
+.modal-body {
+    overflow-y: auto;
+    max-height: calc(90vh - 120px);
+}
+
+/* Fix dropdown menu positioning */
+.dropdown-menu {
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* Properly handle page-level scrolling on mobile devices */
+@media (max-width: 768px) {
+    body {
+        -webkit-overflow-scrolling: touch; /* Better scrolling on iOS */
+    }
+    
+    main {
+        min-height: calc(100vh - 180px);
+    }
+}

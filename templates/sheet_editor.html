@@ -8,6 +8,7 @@
 <link href="{{ url_for('static', filename='css/excel-styles.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/merged-cells.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/grid-operations.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/enhanced-editor.css') }}" rel="stylesheet">
 <style>
     /* Excel-like styling */
     body {
@@ -26,25 +27,21 @@
     .excel-header {
         background-color: #217346;
         color: white;
-        padding: 5px 15px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    
     .excel-toolbar {
         background-color: #f3f2f1;
         border-bottom: 1px solid #e1dfdd;
         padding: 8px;
     }
-    
     .excel-workspace {
         flex: 1;
         overflow: auto;
         position: relative;
     }
-    
     .excel-column-headers {
         position: sticky;
         top: 0;
@@ -54,7 +51,6 @@
         display: flex;
         user-select: none;
     }
-    
     .excel-column-header {
         min-width: 80px;
         height: 30px;
@@ -66,7 +62,6 @@
         background-color: #f3f2f1;
         position: relative;
     }
-    
     .excel-row-header {
         position: sticky;
         left: 0;
@@ -80,7 +75,6 @@
         background-color: #f3f2f1;
         font-weight: bold;
     }
-    
     .excel-corner {
         position: sticky;
         top: 0;
@@ -92,7 +86,6 @@
         border-right: 1px solid #dee2e6;
         border-bottom: 1px solid #dee2e6;
     }
-    
     .col-resize-handle {
         position: absolute;
         top: 0;
@@ -102,11 +95,9 @@
         cursor: col-resize;
         z-index: 25;
     }
-    
     .col-resize-handle:hover {
         background-color: #0d6efd;
     }
-    
     .row-resize-handle {
         position: absolute;
         bottom: 0;
@@ -116,35 +107,29 @@
         cursor: row-resize;
         z-index: 25;
     }
-    
     .row-resize-handle:hover {
         background-color: #0d6efd;
     }
-    
     .sheet-table {
         border-collapse: collapse;
         min-width: 100%;
         table-layout: fixed;
         margin-bottom: 0;
     }
-    
     .sheet-table td, .sheet-table th {
         border: 1px solid #dee2e6;
         padding: 0;
         position: relative;
     }
-    
     .sheet-cell {
         height: 25px;
         min-width: 80px;
         position: relative;
     }
-    
     .sheet-cell.selected, .sheet-header.selected {
         outline: 2px solid #1a73e8;
         z-index: 5;
     }
-    
     .editable-cell {
         width: 100%;
         height: 100%;
@@ -156,13 +141,11 @@
         outline: none;
         background-color: transparent;
     }
-    
     .editable-cell:focus {
         outline: 2px solid #1a73e8;
         z-index: 5;
         overflow: hidden;
     }
-    
     .formula-input {
         display: none;
         position: fixed;
@@ -172,7 +155,6 @@
         width: 400px;
         z-index: 1050;
     }
-    
     .cell-menu {
         position: absolute;
         z-index: 1000;
@@ -181,12 +163,10 @@
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         border-radius: 4px;
     }
-    
     .formatting-panel {
         background-color: #f8f9fa;
         border-bottom: 1px solid #dee2e6;
     }
-    
     /* Status bar styling */
     .excel-status-bar {
         height: 25px;
@@ -198,7 +178,6 @@
         font-size: 12px;
         color: #605e5c;
     }
-    
     /* Cell selection styling */
     .cell-selection-indicator {
         position: absolute;
@@ -208,7 +187,6 @@
         width: 6px;
         height: 6px;
     }
-    
     /* Information when hovering over cells */
     .cell-info {
         position: absolute;
@@ -220,7 +198,6 @@
         z-index: 1000;
         pointer-events: none;
     }
-    
     /* Toast notifications */
     .toast-container {
         position: fixed;
@@ -245,26 +222,17 @@
             <button class="btn btn-sm btn-light me-2" id="keyboardShortcutsBtn" title="Keyboard Shortcuts">
                 <i class="bi bi-keyboard"></i> Shortcuts
             </button>
-            <div class="btn-group me-2 export-btn-group">
+            <div class="btn-group me-2">
                 <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-file-earmark-arrow-down"></i> Export
                 </button>
-                <div class="dropdown-menu dropdown-menu-end shadow-sm export-menu">
-                    <h6 class="dropdown-header">Export Options</h6>
-                    <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='xlsx') }}" data-format="xlsx">
-                        <i class="bi bi-file-earmark-excel me-2"></i>Excel (.xlsx)
-                    </a>
-                    <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='csv') }}" data-format="csv">
-                        <i class="bi bi-file-earmark-text me-2"></i>CSV (.csv)
-                    </a>
-                    <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='pdf') }}" data-format="pdf">
-                        <i class="bi bi-file-earmark-pdf me-2"></i>PDF (.pdf)
-                    </a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="{{ url_for('download_history') }}">
-                        <i class="bi bi-clock-history me-2"></i>View Download History
-                    </a>
-                </div>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='xlsx') }}">Excel (.xlsx)</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='csv') }}">CSV (.csv)</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='pdf') }}">PDF (.pdf)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ url_for('download_history') }}">View Download History</a></li>
+                </ul>
             </div>
             <button class="btn btn-sm btn-light" onclick="window.location.href='{{ url_for('index') }}'" title="Close Sheet">
                 <i class="bi bi-x-lg"></i> Close
@@ -283,17 +251,11 @@
                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Export">
                         <i class="bi bi-download"></i>
                     </button>
-                    <div class="dropdown-menu dropdown-menu-end shadow-sm export-menu">
-                        <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='xlsx') }}" data-format="xlsx">
-                            <i class="bi bi-file-earmark-excel me-2"></i>Excel (.xlsx)
-                        </a>
-                        <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='csv') }}" data-format="csv">
-                            <i class="bi bi-file-earmark-text me-2"></i>CSV (.csv)
-                        </a>
-                        <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='pdf') }}" data-format="pdf">
-                            <i class="bi bi-file-earmark-pdf me-2"></i>PDF (.pdf)
-                        </a>
-                    </div>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='xlsx') }}">Excel (.xlsx)</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='csv') }}">CSV (.csv)</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='pdf') }}">PDF (.pdf)</a></li>
+                    </ul>
                 </div>
             </div>
             <div class="btn-group me-2" role="group" aria-label="Editing">
@@ -305,12 +267,39 @@
                 </button>
             </div>
             <div class="btn-group me-2" role="group" aria-label="Formatting">
-                <button class="btn btn-sm btn-outline-secondary" id="toggleFormatPanel" title="Format">
+                <button class="btn btn-sm btn-outline-secondary" id="toggleFormatPanel" title="Format" onclick="toggleFormatPanel()">
                     <i class="bi bi-type"></i> Format
                 </button>
             </div>
         </div>
     </div>
+    
+    <!-- Add a script right after the formatting panel button to make sure it works -->
+    <script>
+        // Immediate function to fix format panel toggling
+        function toggleFormatPanel() {
+            const formatPanel = document.querySelector('.formatting-panel');
+            const formatButton = document.getElementById('toggleFormatPanel');
+            
+            if (formatPanel && formatButton) {
+                if (formatPanel.style.display === 'none' || !formatPanel.style.display) {
+                    formatPanel.style.display = 'block';
+                    formatButton.classList.add('active');
+                } else {
+                    formatPanel.style.display = 'none';
+                    formatButton.classList.remove('active');
+                }
+            }
+        }
+        
+        // Set initial state when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const formatPanel = document.querySelector('.formatting-panel');
+            if (formatPanel) {
+                formatPanel.style.display = 'none';
+            }
+        });
+    </script>
     
     <!-- Formatting Panel (initially hidden) -->
     <div class="formatting-panel" style="display: none;">
@@ -360,16 +349,22 @@
                         </button>
                     </div>
                 </div>
-
+                
                 <!-- Add Row/Column Operations -->
                 <div class="col-auto">
                     <span class="d-block text-muted small mb-1">Add/Remove</span>
                     <div class="btn-group" role="group" aria-label="Table operations">
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="addRowBtn" title="Add Row">
-                            <i class="bi bi-plus-square"></i> Add Row
+                            <i class="bi bi-plus-square"></i> <span class="d-none d-md-inline">Add Row</span>
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="addColumnBtn" title="Add Column">
-                            <i class="bi bi-plus-square-dotted"></i> Add Column
+                            <i class="bi bi-plus-square-dotted"></i> <span class="d-none d-md-inline">Add Col</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="deleteRowBtn" title="Delete Selected Row">
+                            <i class="bi bi-dash-square"></i> <span class="d-none d-md-inline">Del Row</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="deleteColumnBtn" title="Delete Selected Column">
+                            <i class="bi bi-dash-square-dotted"></i> <span class="d-none d-md-inline">Del Col</span>
                         </button>
                     </div>
                 </div>
@@ -435,8 +430,9 @@
     
     <!-- Excel status bar -->
     <div class="excel-status-bar">
-        <div class="me-3">Ready</div>
+        <div class="me-3" id="sheetStatus">Ready</div>
         <div class="me-auto">Sheet 1 of 1</div>
+        <div class="mx-3" id="rowColCount"></div>
         <div class="ms-3" id="selectedCellInfo">A1</div>
     </div>
 </div>
@@ -488,6 +484,7 @@
 <script src="{{ url_for('static', filename='js/header-formatting.js') }}"></script>
 <script src="{{ url_for('static', filename='js/format-button.js') }}"></script>
 <script src="{{ url_for('static', filename='js/excel-grid-operations.js') }}"></script>
+<script src="{{ url_for('static', filename='js/keyboard-shortcuts.js') }}"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -525,16 +522,6 @@
                 toast.remove();
             }, 3000);
         };
-        
-        // Make sure navigation works from all pages
-        document.querySelectorAll('a[href]').forEach(link => {
-            // Ensure links work properly by making them absolute if they aren't already
-            if (!link.href.match(/^https?:\/\//) && !link.href.startsWith('/')) {
-                if (!link.href.startsWith(window.location.origin)) {
-                    link.href = '/' + link.getAttribute('href');
-                }
-            }
-        });
         
         // Initialize save button
         const saveBtn = document.getElementById('saveSheetBtn');

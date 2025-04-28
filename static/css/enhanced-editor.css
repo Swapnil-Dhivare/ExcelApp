@@ -1,0 +1,250 @@
+/* Enhanced styling for the Excel sheet editor */
+
+/* Improve overall layout */
+.excel-container {
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Header styling */
+.excel-header {
+    background-color: #217346;
+    color: white;
+    padding: 8px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.excel-header h5 {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.excel-header h5::before {
+    content: '\f35a'; /* Excel icon from Bootstrap Icons */
+    font-family: 'Bootstrap Icons';
+    margin-right: 8px;
+    font-size: 1.2rem;
+}
+
+/* Button groups styling */
+.excel-header .btn-group .btn,
+.excel-toolbar .btn-group .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.excel-header .btn {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Toolbar enhancements */
+.excel-toolbar {
+    background-color: #fbfbfb;
+    border-bottom: 1px solid #e1dfdd;
+    padding: 8px 15px;
+}
+
+/* Better formatting panel */
+.formatting-panel {
+    background-color: #f0f0f0;
+    border-bottom: 1px solid #e1dfdd;
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+}
+
+.formatting-panel .col-auto {
+    margin-bottom: 10px;
+}
+
+.formatting-panel .form-label,
+.formatting-panel .text-muted {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Style for add/remove buttons */
+.btn-group[aria-label="Table operations"] .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.btn-group[aria-label="Table operations"] .btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.btn-group[aria-label="Table operations"] .btn-outline-danger:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+/* Workspace styling */
+.excel-workspace {
+    background-color: #ffffff;
+    border: none;
+}
+
+/* Better table styling */
+.sheet-table {
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.sheet-table th {
+    background-color: #f3f2f1;
+    font-weight: 600;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.sheet-table th, .sheet-table td {
+    border: 1px solid #dee2e6;
+    transition: background-color 0.15s ease;
+}
+
+.sheet-table tr:hover td {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Better selection styling */
+.sheet-cell.selected, .sheet-header.selected {
+    outline: 2px solid #217346;
+    z-index: 5;
+    position: relative;
+}
+
+/* Status bar improvements */
+.excel-status-bar {
+    background-color: #f3f2f1;
+    border-top: 1px solid #e1dfdd;
+    color: #605e5c;
+    font-size: 12px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+}
+
+/* Tooltips for buttons */
+[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #212529;
+    color: white;
+    text-align: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Column letters and row numbers styling */
+.excel-column-header {
+    background-color: #f3f2f1;
+    border-right: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+    text-align: center;
+    font-weight: 600;
+    color: #605e5c;
+    font-size: 12px;
+}
+
+/* Sheet corner styling */
+.excel-corner {
+    background-color: #f3f2f1;
+    border-right: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Better resize handle styling */
+.col-resize-handle, .row-resize-handle {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.sheet-header:hover .col-resize-handle,
+.excel-column-header:hover .col-resize-handle,
+tr:hover .row-resize-handle {
+    opacity: 1;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .formatting-panel .col-auto {
+        margin-bottom: 8px;
+    }
+    
+    .btn-group[aria-label="Table operations"] .btn {
+        padding: 0.25rem 0.4rem;
+    }
+    
+    .excel-header .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* Modified cell indicator */
+.modified-cell {
+    position: relative;
+}
+
+.modified-cell::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 8px 8px 0;
+    border-color: transparent #217346 transparent transparent;
+}
+
+/* Unsaved changes indicator animation */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.excel-header h5.unsaved {
+    animation: pulse 2s infinite;
+}
+
+.excel-header h5.unsaved::after {
+    content: '*';
+    color: #ffd700;
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+/* Better dropdown menu design */
+.dropdown-menu {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-item i {
+    margin-right: 8px;
+    font-size: 14px;
+}

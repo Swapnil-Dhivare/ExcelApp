@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add event listeners for buttons
         document.getElementById('addRowBtn')?.addEventListener('click', addRow);
         document.getElementById('addColumnBtn')?.addEventListener('click', addColumn);
+        document.getElementById('deleteRowBtn')?.addEventListener('click', deleteSelectedRow);
+        document.getElementById('deleteColumnBtn')?.addEventListener('click', deleteSelectedColumn);
         
         // Add context menu items if context menu exists
         addContextMenuItems();
@@ -38,14 +40,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 addColItem.innerHTML = '<i class="bi bi-plus-square-dotted me-2"></i> Add Column';
                 addColItem.addEventListener('click', addColumn);
                 
+                const deleteRowItem = document.createElement('div');
+                deleteRowItem.id = 'cm-delete-row';
+                deleteRowItem.className = 'context-menu-item';
+                deleteRowItem.innerHTML = '<i class="bi bi-dash-square me-2"></i> Delete Row';
+                deleteRowItem.addEventListener('click', deleteSelectedRow);
+                
+                const deleteColItem = document.createElement('div');
+                deleteColItem.id = 'cm-delete-col';
+                deleteColItem.className = 'context-menu-item';
+                deleteColItem.innerHTML = '<i class="bi bi-dash-square-dotted me-2"></i> Delete Column';
+                deleteColItem.addEventListener('click', deleteSelectedColumn);
+                
                 // Add items in the correct position
                 const referenceNode = contextMenu.querySelector('.context-menu-divider');
                 if (referenceNode) {
+                    contextMenu.insertBefore(deleteColItem, referenceNode);
+                    contextMenu.insertBefore(deleteRowItem, referenceNode);
                     contextMenu.insertBefore(addColItem, referenceNode);
                     contextMenu.insertBefore(addRowItem, referenceNode);
                 } else {
                     contextMenu.appendChild(addRowItem);
                     contextMenu.appendChild(addColItem);
+                    contextMenu.appendChild(deleteRowItem);
+                    contextMenu.appendChild(deleteColItem);
                 }
             }
         }
@@ -235,6 +253,182 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
+     * Delete selected row
+     */
+    function deleteSelectedRow() {
+        // Check if we have a selection
+        if (!window.selectedCells || window.selectedCells.length === 0) {
+            showToast('Please select a cell in the row you want to delete', 'warning');
+            return;
+        }
+        
+        // Get row index from first selected cell
+        const cell = window.selectedCells[0];
+        const rowIndex = parseInt(cell.getAttribute('data-row'));
+        
+        // Confirm deletion
+        if (!confirm(`Are you sure you want to delete row ${rowIndex + 1}?`)) {
+            return;
+        }
+        
+        // Find the row in the table
+        const table = document.getElementById('sheetTable');
+        if (!table) return;
+        
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+        
+        const row = tbody.querySelector(`tr[data-row="${rowIndex}"]`);
+        if (!row) {
+            showToast('Row not found', 'error');
+            return;
+        }
+        
+        // Remove the row
+        tbody.removeChild(row);
+        
+        // Update data-row attributes for subsequent rows
+        const remainingRows = tbody.querySelectorAll('tr');
+        for (let i = 0; i < remainingRows.length; i++) {
+            const currentRow = remainingRows[i];
+            const currentRowIndex = parseInt(currentRow.getAttribute('data-row'));
+            
+            if (currentRowIndex > rowIndex) {
+                // Update row index
+                currentRow.setAttribute('data-row', currentRowIndex - 1);
+                
+                // Update cells in the row
+                const cells = currentRow.querySelectorAll('td');
+                cells.forEach(cell => {
+                    cell.setAttribute('data-row', currentRowIndex - 1);
+                });
+            }
+        }
+        
+        // Clear selection
+        if (window.clearCellSelection) {
+            window.clearCellSelection();
+        } else {
+            window.selectedCells = [];
+            document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+        }
+        
+        // Show success message
+        showToast('Row deleted successfully', 'success');
+        
+        // Signal that the sheet has been modified
+        if (window.markSheetModified) {
+            window.markSheetModified();
+        }
+    }
+    
+    /**
+     * Delete selected column
+     */
+    function deleteSelectedColumn() {
+        // Check if we have a selection
+        if (!window.selectedCells || window.selectedCells.length === 0) {
+            showToast('Please select a cell in the column you want to delete', 'warning');
+            return;
+        }
+        
+        // Get column index from first selected cell
+        const cell = window.selectedCells[0];
+        const colIndex = parseInt(cell.getAttribute('data-col'));
+        
+        // Confirm deletion
+        if (!confirm(`Are you sure you want to delete column ${getColumnLetter(colIndex)}?`)) {
+            return;
+        }
+        
+        // Find the table
+        const table = document.getElementById('sheetTable');
+        if (!table) return;
+        
+        // Remove header cell
+        const headerRow = table.querySelector('thead tr');
+        if (headerRow) {
+            const headerCell = headerRow.querySelector(`th[data-col="${colIndex}"]`);
+            if (headerCell) {
+                headerRow.removeChild(headerCell);
+            }
+        }
+        
+        // Remove column cells from body rows
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cell = row.querySelector(`td[data-col="${colIndex}"]`);
+            if (cell) {
+                row.removeChild(cell);
+            }
+        });
+        
+        // Remove column header from fixed header row if it exists
+        const columnHeadersContainer = document.getElementById('columnHeaders');
+        if (columnHeadersContainer) {
+            const columnHeader = columnHeadersContainer.querySelector(`.excel-column-header[data-col="${colIndex}"]`);
+            if (columnHeader) {
+                columnHeadersContainer.removeChild(columnHeader);
+            }
+        }
+        
+        // Update data-col attributes for subsequent columns
+        updateColumnIndices(colIndex);
+        
+        // Clear selection
+        if (window.clearCellSelection) {
+            window.clearCellSelection();
+        } else {
+            window.selectedCells = [];
+            document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+        }
+        
+        // Show success message
+        showToast('Column deleted successfully', 'success');
+        
+        // Signal that the sheet has been modified
+        if (window.markSheetModified) {
+            window.markSheetModified();
+        }
+    }
+    
+    /**
+     * Update column indices after deletion
+     */
+    function updateColumnIndices(deletedColIndex) {
+        // Update header cells
+        document.querySelectorAll('#sheetTable th[data-col]').forEach(headerCell => {
+            const colIndex = parseInt(headerCell.getAttribute('data-col'));
+            if (colIndex > deletedColIndex) {
+                headerCell.setAttribute('data-col', colIndex - 1);
+            }
+        });
+        
+        // Update data cells
+        document.querySelectorAll('#sheetTable td[data-col]').forEach(cell => {
+            const colIndex = parseInt(cell.getAttribute('data-col'));
+            if (colIndex > deletedColIndex) {
+                cell.setAttribute('data-col', colIndex - 1);
+            }
+        });
+        
+        // Update fixed column headers
+        document.querySelectorAll('.excel-column-header[data-col]').forEach(header => {
+            const colIndex = parseInt(header.getAttribute('data-col'));
+            if (colIndex > deletedColIndex) {
+                header.setAttribute('data-col', colIndex - 1);
+                header.textContent = getColumnLetter(colIndex - 1);
+                
+                // Update resize handle
+                const resizeHandle = header.querySelector('.col-resize-handle');
+                if (resizeHandle) {
+                    resizeHandle.setAttribute('data-col', colIndex - 1);
+                }
+            }
+        });
+    }
+    
+    /**
      * Initialize events for new cells
      */
     function initCellEvents(row, colIndex) {
@@ -287,9 +481,28 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    /**
+     * Mark sheet as modified to signal unsaved changes
+     */
+    window.markSheetModified = function() {
+        // Add asterisk to sheet name in the UI
+        const sheetNameElement = document.querySelector('.excel-header h5');
+        if (sheetNameElement && !sheetNameElement.textContent.includes('*')) {
+            sheetNameElement.textContent += ' *';
+        }
+        
+        // Enable save button if it was disabled
+        const saveBtn = document.getElementById('saveSheetBtn');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+        }
+    };
+    
     // Expose methods globally
     window.gridOperations = {
         addRow,
-        addColumn
+        addColumn,
+        deleteSelectedRow,
+        deleteSelectedColumn
     };
 });
