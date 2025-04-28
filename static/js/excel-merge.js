@@ -52,34 +52,30 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Collect content from all cells
-        let mergedContent = '';
-        window.selectedCells.forEach(cell => {
-            const editableDiv = cell.querySelector('.editable-cell');
-            if (editableDiv && editableDiv.textContent.trim()) {
-                if (mergedContent) mergedContent += ' ';
-                mergedContent += editableDiv.textContent.trim();
-            }
-        });
-        
-        // Set content to main cell
-        const mainEditableDiv = mainCell.querySelector('.editable-cell');
-        if (mainEditableDiv) {
-            mainEditableDiv.textContent = mergedContent;
-        }
+        // Keep only the content from the top-left cell (don't combine content)
+        const mainContent = mainCell.querySelector('.editable-cell')?.innerHTML || '';
         
         // Calculate colspan and rowspan
         const colspan = boundaries.maxCol - boundaries.minCol + 1;
         const rowspan = boundaries.maxRow - boundaries.minRow + 1;
         
-        // Set attributes on the main cell
-        mainCell.setAttribute('colspan', colspan);
+        // Set rowspan and colspan attributes
         mainCell.setAttribute('rowspan', rowspan);
+        mainCell.setAttribute('colspan', colspan);
         mainCell.classList.add('merged-cell');
         
         // Set data attributes for saving state
         mainCell.setAttribute('data-merged', 'true');
         mainCell.setAttribute('data-merge-range', `${boundaries.minRow},${boundaries.minCol},${boundaries.maxRow},${boundaries.maxCol}`);
+        
+        // Adjust the actual HTML table
+        const table = document.getElementById('sheetTable');
+        
+        // Set the rowspan and colspan on the actual HTML element
+        const row = mainCell.parentNode;
+        const cellIndex = Array.from(row.cells).indexOf(mainCell);
+        row.cells[cellIndex].rowSpan = rowspan;
+        row.cells[cellIndex].colSpan = colspan;
         
         // Hide all other cells in the merged range
         for (let r = boundaries.minRow; r <= boundaries.maxRow; r++) {
@@ -91,15 +87,31 @@ document.addEventListener('DOMContentLoaded', function() {
                             document.querySelector(`.sheet-header[data-row="${r}"][data-col="${c}"]`);
                 
                 if (cell) {
-                    cell.style.display = 'none';
+                    // Mark as part of a merge
                     cell.classList.add('hidden-in-merge');
                     cell.setAttribute('data-merged-into', `${boundaries.minRow},${boundaries.minCol}`);
+                    
+                    // Remove the cell from the DOM to actually "merge" the cells
+                    if (cell.parentNode) {
+                        cell.parentNode.removeChild(cell);
+                    }
                 }
             }
         }
         
-        // Update the table DOM to reflect merge in HTML
-        updateTableDOMForMerge(mainCell, rowspan, colspan);
+        // Ensure the main cell has proper styling
+        const mainEditableDiv = mainCell.querySelector('.editable-cell');
+        if (mainEditableDiv) {
+            // Center content in merged cell
+            mainEditableDiv.style.display = 'flex';
+            mainEditableDiv.style.justifyContent = 'center';
+            mainEditableDiv.style.alignItems = 'center';
+            mainEditableDiv.style.height = '100%';
+            mainEditableDiv.style.width = '100%';
+            
+            // Keep the original content from top-left cell only
+            mainEditableDiv.innerHTML = mainContent;
+        }
         
         // Save merged state
         saveMergedCells();
@@ -120,16 +132,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Select the merged cell
         mainCell.classList.add('selected');
         window.selectedCells = [mainCell];
-        
-        // Update UI
-        if (typeof window.updateSelectionInfo === 'function') {
-            window.updateSelectionInfo();
-        }
-        
-        // Save sheet data
-        if (typeof window.saveSheetData === 'function') {
-            window.saveSheetData();
-        }
     }
     
     /**
@@ -177,53 +179,90 @@ document.addEventListener('DOMContentLoaded', function() {
             maxCol = minCol + colspan - 1;
         }
         
-        // Remove colspan and rowspan
+        // Get the content from the merged cell
+        const content = cell.querySelector('.editable-cell')?.innerHTML || '';
+        
+        // Reset the main cell
         cell.removeAttribute('colspan');
         cell.removeAttribute('rowspan');
         cell.classList.remove('merged-cell');
         cell.removeAttribute('data-merged');
         cell.removeAttribute('data-merge-range');
         
-        // Reset the main cell content (optional)
-        const mainContent = cell.querySelector('.editable-cell')?.textContent || '';
+        // Reset the actual HTML attributes
+        cell.colSpan = 1;
+        cell.rowSpan = 1;
         
-        // Show all hidden cells
-        document.querySelectorAll(`.hidden-in-merge[data-merged-into="${minRow},${minCol}"]`).forEach(hiddenCell => {
-            hiddenCell.style.display = '';
-            hiddenCell.classList.remove('hidden-in-merge');
-            hiddenCell.removeAttribute('data-merged-into');
-            
-            // Clear content in previously hidden cells
-            const editableDiv = hiddenCell.querySelector('.editable-cell');
-            if (editableDiv) {
-                editableDiv.textContent = '';
-            }
-        });
+        // Reset the editable div styling
+        const editableDiv = cell.querySelector('.editable-cell');
+        if (editableDiv) {
+            editableDiv.style.display = '';
+            editableDiv.style.justifyContent = '';
+            editableDiv.style.alignItems = '';
+            editableDiv.style.height = '';
+            editableDiv.style.width = '';
+        }
         
-        // Also check by coordinates for cells that might not have the attribute
+        // Recreate all cells that were part of the merge
+        const table = document.getElementById('sheetTable');
+        if (!table) return;
+        
+        // Find the tbody
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+        
+        // Rebuild the table structure
         for (let r = minRow; r <= maxRow; r++) {
+            // Get or create row
+            let row = tbody.querySelector(`tr[data-row="${r}"]`);
+            if (!row) {
+                row = document.createElement('tr');
+                row.setAttribute('data-row', r);
+                tbody.appendChild(row);
+            }
+            
+            // Add cells at the right positions
             for (let c = minCol; c <= maxCol; c++) {
                 // Skip the main cell
                 if (r === minRow && c === minCol) continue;
                 
-                const hiddenCell = document.querySelector(`.sheet-cell[data-row="${r}"][data-col="${c}"], .sheet-header[data-row="${r}"][data-col="${c}"]`);
+                // Find position to insert
+                const existingCells = row.querySelectorAll('td');
+                let insertBefore = null;
                 
-                if (hiddenCell) {
-                    hiddenCell.style.display = '';
-                    hiddenCell.classList.remove('hidden-in-merge');
-                    hiddenCell.removeAttribute('data-merged-into');
-                    
-                    // Clear content
-                    const editableDiv = hiddenCell.querySelector('.editable-cell');
-                    if (editableDiv) {
-                        editableDiv.textContent = '';
+                for (let i = 0; i < existingCells.length; i++) {
+                    const cellCol = parseInt(existingCells[i].getAttribute('data-col'));
+                    if (cellCol > c) {
+                        insertBefore = existingCells[i];
+                        break;
                     }
                 }
+                
+                // Create cell
+                const newCell = document.createElement('td');
+                newCell.className = 'sheet-cell';
+                newCell.setAttribute('data-row', r);
+                newCell.setAttribute('data-col', c);
+                
+                // Add editable div
+                const newEditableDiv = document.createElement('div');
+                newEditableDiv.className = 'editable-cell';
+                newEditableDiv.contentEditable = true;
+                newEditableDiv.innerHTML = ''; // Start with empty content
+                
+                newCell.appendChild(newEditableDiv);
+                
+                // Insert at correct position
+                if (insertBefore) {
+                    row.insertBefore(newCell, insertBefore);
+                } else {
+                    row.appendChild(newCell);
+                }
+                
+                // Make sure event listeners are attached
+                setupCellEventListeners(newCell);
             }
         }
-        
-        // Fix the table DOM
-        updateTableDOMForUnmerge(cell);
         
         // Save merged state
         saveMergedCells();
@@ -231,42 +270,40 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show confirmation
         showToast('Cells unmerged successfully', 'success');
         
-        // Save sheet data
+        // Save sheet data after unmerging
         if (typeof window.saveSheetData === 'function') {
             window.saveSheetData();
         }
     }
     
     /**
-     * Update the table DOM to properly reflect merged cells in HTML
+     * Setup event listeners for a newly created cell
      */
-    function updateTableDOMForMerge(cell, rowspan, colspan) {
-        // For proper HTML table merging, we need to set the actual rowspan and colspan attributes
-        const row = cell.closest('tr');
-        const colIndex = parseInt(cell.getAttribute('data-col'));
+    function setupCellEventListeners(cell) {
+        // Add click listener for selection
+        cell.addEventListener('click', function(e) {
+            // If selection functionality exists
+            if (typeof window.selectCell === 'function') {
+                window.selectCell(this, e.ctrlKey, e.shiftKey);
+            } else {
+                // Simple selection
+                if (!e.ctrlKey && !e.shiftKey) {
+                    document.querySelectorAll('.selected').forEach(selectedCell => {
+                        selectedCell.classList.remove('selected');
+                    });
+                    window.selectedCells = [];
+                }
+                
+                this.classList.add('selected');
+                if (!window.selectedCells) window.selectedCells = [];
+                window.selectedCells.push(this);
+            }
+        });
         
-        // For actual HTML table cell merging
-        const actualCell = row.cells[colIndex];
-        if (actualCell) {
-            actualCell.rowSpan = rowspan;
-            actualCell.colSpan = colspan;
-        }
-    }
-    
-    /**
-     * Update the table DOM when unmerging cells
-     */
-    function updateTableDOMForUnmerge(cell) {
-        // Reset the HTML rowspan and colspan
-        const row = cell.closest('tr');
-        const colIndex = parseInt(cell.getAttribute('data-col'));
-        
-        // For actual HTML table cell unmerging
-        const actualCell = row.cells[colIndex];
-        if (actualCell) {
-            actualCell.rowSpan = 1;
-            actualCell.colSpan = 1;
-        }
+        // Add double-click listener for editing
+        cell.querySelector('.editable-cell').addEventListener('dblclick', function() {
+            this.focus();
+        });
     }
     
     /**
@@ -332,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 col,
                 rowspan,
                 colspan,
-                content: cell.querySelector('.editable-cell')?.textContent || ''
+                content: cell.querySelector('.editable-cell')?.innerHTML || ''
             });
         });
         
@@ -368,7 +405,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Set content
                     const editableDiv = cell.querySelector('.editable-cell');
                     if (editableDiv) {
-                        editableDiv.textContent = mergeData.content;
+                        editableDiv.innerHTML = mergeData.content;
+                        
+                        // Add flex styling
+                        editableDiv.style.display = 'flex';
+                        editableDiv.style.justifyContent = 'center';
+                        editableDiv.style.alignItems = 'center';
+                        editableDiv.style.height = '100%';
+                        editableDiv.style.width = '100%';
                     }
                     
                     // Set merge attributes
@@ -376,6 +420,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     cell.setAttribute('colspan', mergeData.colspan);
                     cell.classList.add('merged-cell');
                     cell.setAttribute('data-merged', 'true');
+                    
+                    // Apply actual HTML attributes
+                    cell.rowSpan = mergeData.rowspan;
+                    cell.colSpan = mergeData.colspan;
                     
                     // Calculate merge range
                     const minRow = mergeData.row;
@@ -385,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     cell.setAttribute('data-merge-range', `${minRow},${minCol},${maxRow},${maxCol}`);
                     
-                    // Hide other cells in the merge range
+                    // Remove other cells in the merge range from the DOM
                     for (let r = minRow; r <= maxRow; r++) {
                         for (let c = minCol; c <= maxCol; c++) {
                             // Skip the main cell
@@ -395,15 +443,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                               document.querySelector(`.sheet-header[data-row="${r}"][data-col="${c}"]`);
                             
                             if (hiddenCell) {
-                                hiddenCell.style.display = 'none';
                                 hiddenCell.classList.add('hidden-in-merge');
                                 hiddenCell.setAttribute('data-merged-into', `${minRow},${minCol}`);
+                                
+                                // Remove from DOM
+                                if (hiddenCell.parentNode) {
+                                    hiddenCell.parentNode.removeChild(hiddenCell);
+                                }
                             }
                         }
                     }
-                    
-                    // Update the DOM
-                    updateTableDOMForMerge(cell, mergeData.rowspan, mergeData.colspan);
                 }
             });
         } catch (e) {
@@ -418,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.showToast === 'function') {
             window.showToast(message, type);
         } else {
-            console.log(message);
+            console.log(`${type}: ${message}`);
         }
     }
     

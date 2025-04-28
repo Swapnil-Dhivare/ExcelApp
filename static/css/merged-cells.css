@@ -1,0 +1,52 @@
+/* Styling for merged cells */
+
+/* Improved merged cell styling */
+.merged-cell {
+    background-color: #ffffff !important;
+    border: 1px solid #dee2e6 !important;
+    position: relative;
+    z-index: 3;
+}
+
+.merged-cell .editable-cell {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    padding: 0.25rem !important;
+    position: relative;
+}
+
+.merged-cell.selected {
+    outline: 2px solid #1a73e8 !important;
+    z-index: 10 !important;
+}
+
+/* Hide cells that are part of a merge */
+.hidden-in-merge {
+    display: none !important;
+}
+
+/* Ensure merged cells maintain their appearance */
+.sheet-table .merged-cell {
+    /* Highlight effect on hover */
+    transition: background-color 0.2s;
+}
+
+.sheet-table .merged-cell:hover {
+    background-color: #f8f9fa !important;
+}
+
+/* Create a subtle border inside the merged cell */
+.merged-cell::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 1px solid #ffffff;
+    pointer-events: none;
+}

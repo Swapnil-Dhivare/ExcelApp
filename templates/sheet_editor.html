@@ -6,6 +6,8 @@
 
 {% block styles %}
 <link href="{{ url_for('static', filename='css/excel-styles.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/merged-cells.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/grid-operations.css') }}" rel="stylesheet">
 <style>
     /* Excel-like styling */
     body {
@@ -243,17 +245,26 @@
             <button class="btn btn-sm btn-light me-2" id="keyboardShortcutsBtn" title="Keyboard Shortcuts">
                 <i class="bi bi-keyboard"></i> Shortcuts
             </button>
-            <div class="btn-group me-2">
+            <div class="btn-group me-2 export-btn-group">
                 <button class="btn btn-sm btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-file-earmark-arrow-down"></i> Export
                 </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='xlsx') }}">Excel (.xlsx)</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='csv') }}">CSV (.csv)</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='pdf') }}">PDF (.pdf)</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{{ url_for('download_history') }}">View Download History</a></li>
-                </ul>
+                <div class="dropdown-menu dropdown-menu-end shadow-sm export-menu">
+                    <h6 class="dropdown-header">Export Options</h6>
+                    <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='xlsx') }}" data-format="xlsx">
+                        <i class="bi bi-file-earmark-excel me-2"></i>Excel (.xlsx)
+                    </a>
+                    <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='csv') }}" data-format="csv">
+                        <i class="bi bi-file-earmark-text me-2"></i>CSV (.csv)
+                    </a>
+                    <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='pdf') }}" data-format="pdf">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>PDF (.pdf)
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ url_for('download_history') }}">
+                        <i class="bi bi-clock-history me-2"></i>View Download History
+                    </a>
+                </div>
             </div>
             <button class="btn btn-sm btn-light" onclick="window.location.href='{{ url_for('index') }}'" title="Close Sheet">
                 <i class="bi bi-x-lg"></i> Close
@@ -272,11 +283,17 @@
                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Export">
                         <i class="bi bi-download"></i>
                     </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='xlsx') }}">Excel (.xlsx)</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='csv') }}">CSV (.csv)</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='pdf') }}">PDF (.pdf)</a></li>
-                    </ul>
+                    <div class="dropdown-menu dropdown-menu-end shadow-sm export-menu">
+                        <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='xlsx') }}" data-format="xlsx">
+                            <i class="bi bi-file-earmark-excel me-2"></i>Excel (.xlsx)
+                        </a>
+                        <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='csv') }}" data-format="csv">
+                            <i class="bi bi-file-earmark-text me-2"></i>CSV (.csv)
+                        </a>
+                        <a class="dropdown-item export-link" href="{{ url_for('export_sheet', sheet_name=sheet.sheet_name, format_type='pdf') }}" data-format="pdf">
+                            <i class="bi bi-file-earmark-pdf me-2"></i>PDF (.pdf)
+                        </a>
+                    </div>
                 </div>
             </div>
             <div class="btn-group me-2" role="group" aria-label="Editing">
@@ -340,6 +357,19 @@
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="divideCellBtn" title="Divide Cell">
                             <i class="bi bi-grid-3x2-gap"></i> Divide
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Add Row/Column Operations -->
+                <div class="col-auto">
+                    <span class="d-block text-muted small mb-1">Add/Remove</span>
+                    <div class="btn-group" role="group" aria-label="Table operations">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="addRowBtn" title="Add Row">
+                            <i class="bi bi-plus-square"></i> Add Row
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="addColumnBtn" title="Add Column">
+                            <i class="bi bi-plus-square-dotted"></i> Add Column
                         </button>
                     </div>
                 </div>
@@ -447,8 +477,8 @@
 <script src="{{ url_for('static', filename='js/excel-buttons.js') }}"></script>
 <script src="{{ url_for('static', filename='js/excel-formulas.js') }}"></script>
 <script src="{{ url_for('static', filename='js/excel-filters.js') }}"></script>
-<script src="{{ url_for('static', filename='js/excel-resize.js') }}"></script>
 <script src="{{ url_for('static', filename='js/excel-merge.js') }}"></script>
+<script src="{{ url_for('static', filename='js/column-resize.js') }}"></script>
 <script src="{{ url_for('static', filename='js/color-formatting.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dropdown-fix.js') }}"></script>
 <script src="{{ url_for('static', filename='js/excel-keyboard.js') }}"></script>
@@ -457,6 +487,7 @@
 <script src="{{ url_for('static', filename='js/excel-performance.js') }}"></script>
 <script src="{{ url_for('static', filename='js/header-formatting.js') }}"></script>
 <script src="{{ url_for('static', filename='js/format-button.js') }}"></script>
+<script src="{{ url_for('static', filename='js/excel-grid-operations.js') }}"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -581,12 +612,16 @@
                 window.saveSheetData();
             }
         });
-        w.excelResize.initializeResizeHandlers();
-        // After all scripts are loaded, reinitialize any components that need it
-        if (window.excelResize && typeof window.excelResize.initializeResizeHandlers === 'function') {
-            window.excelResize.initializeResizeHandlers();ge && typeof window.excelMerge.loadMergedCells === 'function') {
-        }ergedCells();
         
+        // Initialize column resize
+        if (window.columnResize && typeof window.columnResize.init === 'function') {
+            window.columnResize.init();
+        }
+        
+        // Initialize merge cells
         if (window.excelMerge && typeof window.excelMerge.loadMergedCells === 'function') {
             window.excelMerge.loadMergedCells();
-        }    });</script>{% endblock %}
+        }
+    });
+</script>
+{% endblock %}

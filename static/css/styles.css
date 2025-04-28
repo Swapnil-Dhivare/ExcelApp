@@ -982,3 +982,162 @@ input[type="color"] {
         padding-bottom: 4rem;
     }
 }
+
+/* Global styles for the application */
+
+/* Ensure navbar dropdowns work properly */
+.navbar .dropdown-menu {
+    border-radius: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.navbar .dropdown-item:active,
+.navbar .dropdown-item:focus {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Active navigation items */
+.navbar .nav-link.active {
+    font-weight: 500;
+    position: relative;
+}
+
+.navbar .nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0.5rem;
+    right: 0.5rem;
+    height: 2px;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* Improved dropdown positioning */
+.dropdown-menu {
+    margin-top: 0.125rem;
+}
+
+/* Better mobile navigation */
+@media (max-width: 992px) {
+    .navbar-collapse {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .navbar .dropdown-menu {
+        border: none;
+        background-color: rgba(0, 0, 0, 0.05);
+        box-shadow: none;
+        padding-left: 1rem;
+    }
+    
+    .navbar .dropdown-item {
+        color: rgba(255, 255, 255, 0.85);
+    }
+    
+    .navbar .dropdown-divider {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Fix for very tall content */
+body:not(.sheet-editor-page) {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body:not(.sheet-editor-page) main {
+    flex: 1;
+}
+
+/* Ensure all pages are scrollable */
+body:not(.sheet-editor-page) {
+    overflow-y: auto !important;
+}
+
+/* Improved dropdown styles */
+.dropdown-menu {
+    border-radius: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 0.5rem 0;
+}
+
+.dropdown-header {
+    padding: 0.5rem 1rem;
+    color: #6c757d;
+    font-weight: 600;
+    margin-top: 0;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-item i {
+    margin-right: 0.5rem;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.dropdown-item:active {
+    background-color: #0d6efd;
+}
+
+/* Dropdown positioning fix */
+.dropdown-menu-up {
+    top: auto !important;
+    bottom: 100% !important;
+    margin-bottom: 0.125rem !important;
+}
+
+/* Special styles for export dropdown */
+.export-menu {
+    min-width: 200px;
+}
+
+.export-menu .dropdown-item i {
+    width: 20px;
+    text-align: center;
+}
+
+/* Fix for navbar dropdown positioning */
+@media (min-width: 992px) {
+    .navbar .nav-item.dropdown:hover .dropdown-menu {
+        display: block;
+        margin-top: 0;
+    }
+}
+
+/* Fix navbar z-index to ensure dropdowns show correctly */
+.navbar {
+    position: relative;
+    z-index: 1030;
+}
+
+.navbar .dropdown-menu {
+    z-index: 1031;
+}
+
+/* Ensure export button has proper styling */
+.export-btn-group .dropdown-toggle::after {
+    margin-left: 0.5em;
+    vertical-align: middle;
+}
+
+/* Make sure touch targets are large enough */
+@media (max-width: 768px) {
+    .dropdown-item {
+        padding: 0.75rem 1rem;
+    }
+    
+    .navbar-nav .dropdown-menu {
+        padding: 0.5rem 0;
+    }
+}
