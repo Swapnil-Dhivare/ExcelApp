@@ -1,0 +1,93 @@
+<!-- If this file doesn't exist, you'll need to add this code to the appropriate template -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="previewModalLabel">Preview: Sheet Name</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Simple formatting toolbar for preview mode -->
+        <div class="preview-toolbar mb-2 p-2 bg-light border rounded">
+          <div class="btn-group me-2 mb-1">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="previewBoldBtn" title="Bold">
+              <i class="bi bi-type-bold"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="previewItalicBtn" title="Italic">
+              <i class="bi bi-type-italic"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="previewUnderlineBtn" title="Underline">
+              <i class="bi bi-type-underline"></i>
+            </button>
+          </div>
+
+          <div class="btn-group me-2 mb-1">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="previewAlignLeftBtn" title="Align Left">
+              <i class="bi bi-text-left"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="previewAlignCenterBtn" title="Align Center">
+              <i class="bi bi-text-center"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="previewAlignRightBtn" title="Align Right">
+              <i class="bi bi-text-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="previewContent">
+          <!-- Content will be dynamically loaded here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.sheet-cell.selected {
+  outline: 2px solid #0d6efd !important;
+  position: relative;
+  z-index: 5;
+}
+
+/* Add more user-friendly styling */
+.preview-toolbar .btn-group {
+  margin-right: 8px;
+}
+
+.preview-toolbar .btn.active {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* Tooltip for selected cells count */
+.selection-tooltip {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 1000;
+  pointer-events: none;
+}
+</style>
+
+<!-- Add this script to initialize preview mode functionality -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize cell selection tracking
+    window.selectedCells = window.selectedCells || [];
+    
+    // Add CSRF token to all AJAX requests
+    $.ajaxSetup({
+      beforeSend: function(xhr, settings) {
+        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+          xhr.setRequestHeader("X-CSRFToken", $('meta[name="csrf-token"]').attr('content'));
+        }
+      }
+    });
+  });
+</script>

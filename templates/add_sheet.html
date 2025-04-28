@@ -1,73 +1,107 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block title %}Add New Sheet{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Add New Sheet</h4>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Add New Sheet</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_sheet') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="sheet_name" class="form-label">Sheet Name</label>
+                            <input type="text" class="form-control" id="sheet_name" name="sheet_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="data" class="form-label">Initial Data (optional)</label>
+                            <textarea class="form-control" id="data" name="data" rows="5" placeholder="Header1,Header2,Header3;Value1,Value2,Value3;Value4,Value5,Value6"></textarea>
+                            <small class="text-muted">Format: Separate rows with semicolons (;) and cells with commas (,)</small>
+                        </div>
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-primary">Create Sheet</button>
+                            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('add_sheet') }}">
-                    <div class="mb-3">
-                        <label class="form-label">Sheet Name</label>
-                        <input type="text" class="form-control" name="sheet_name" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Use Template</label>
-                        <select class="form-select" id="templateSelect" name="template_id">
-                            <option value="">-- Select Template --</option>
-                            {% for template in built_in_templates + custom_templates %}
-                                <option value="{{ template.id }}">{{ template.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Headers (comma separated)</label>
-                        <input type="text" class="form-control" id="headersInput" name="headers" placeholder="Column1,Column2,Column3">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Data</label>
-                        <textarea class="form-control" id="dataInput" name="data" rows="8" placeholder="Enter tab-separated values&#10;Row1Col1&#9;Row1Col2&#10;Row2Col1&#9;Row2Col2"></textarea>
-                        <small class="text-muted">Use <b>commas</b> to separate columns, <b>semicolons</b> to separate rows.<br>
-Example: <code>Name,Age,Grade;Alice,20,A;Bob,21,B</code></small>
-                    </div>
-                    
-                    <!-- Preview sections -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Format Preview</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="preview-text" contenteditable="true">
-                                Sample Text - Click to edit
+            
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Use Template</h4>
+                </div>
+                <div class="card-body">
+                    <h5>Built-in Templates</h5>
+                    <div class="row">
+                        {% for template in built_in_templates %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ template.name }}</h6>
+                                    <button type="button" class="btn btn-sm btn-outline-primary use-template" 
+                                            data-sheet-name="{{ template.default_sheet_name if template.default_sheet_name else template.name }}"
+                                            data-headers="{{ ','.join(template.headers) if template.headers else '' }}"
+                                            data-sample="{{ template.sample_data_string }}">
+                                        Use Template
+                                    </button>
+                                </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
+                    
+                    {% if custom_templates %}
+                    <h5 class="mt-4">Custom Templates</h5>
+                    <div class="row">
+                        {% for template in custom_templates %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ template.name }}</h6>
+                                    <button type="button" class="btn btn-sm btn-outline-primary use-template" 
+                                            data-sheet-name="{{ template.default_sheet_name if template.default_sheet_name else template.name }}"
+                                            data-headers="{{ ','.join(template.headers) if template.headers else '' }}"
+                                            data-sample="{{ template.sample_data_string }}">
+                                        Use Template
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <h5 class="mb-0">Data Preview</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="previewTable" class="table">
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">Add Sheet</button>
-                    </div>
-                </form>
+<!-- Modal for template preview -->
+<div class="modal fade" id="templatePreviewModal" tabindex="-1" aria-labelledby="templatePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="templatePreviewModalLabel">Template Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered preview-table">
+                        <thead>
+                            <tr id="previewHeaders"></tr>
+                        </thead>
+                        <tbody id="previewData">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="useTemplateConfirm">Use This Template</button>
             </div>
         </div>
     </div>
@@ -75,6 +109,85 @@ Example: <code>Name,Age,Grade;Alice,20,A;Bob,21,B</code></small>
 {% endblock %}
 
 {% block scripts %}
-<!-- Add your JavaScript file -->
-<script src="{{ url_for('static', filename='js/preview.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Template selection logic
+        let currentTemplate = null;
+        
+        document.querySelectorAll('.use-template').forEach(button => {
+            button.addEventListener('click', function() {
+                const sheetName = this.getAttribute('data-sheet-name');
+                const headers = this.getAttribute('data-headers');
+                const sampleData = this.getAttribute('data-sample');
+                
+                // Store selected template data
+                currentTemplate = {
+                    sheetName: sheetName,
+                    headers: headers,
+                    sampleData: sampleData
+                };
+                
+                // Update modal with template data
+                const previewHeaders = document.getElementById('previewHeaders');
+                previewHeaders.innerHTML = '';
+                
+                // Add headers to preview
+                if (headers) {
+                    headers.split(',').forEach(header => {
+                        const th = document.createElement('th');
+                        th.textContent = header;
+                        previewHeaders.appendChild(th);
+                    });
+                }
+                
+                // Add sample data to preview
+                const previewData = document.getElementById('previewData');
+                previewData.innerHTML = '';
+                
+                if (sampleData) {
+                    sampleData.split(';').forEach(rowStr => {
+                        const tr = document.createElement('tr');
+                        rowStr.split(',').forEach(cell => {
+                            const td = document.createElement('td');
+                            td.textContent = cell;
+                            tr.appendChild(td);
+                        });
+                        previewData.appendChild(tr);
+                    });
+                }
+                
+                // Show the modal using Bootstrap 5's built-in API
+                const templateModal = new bootstrap.Modal(document.getElementById('templatePreviewModal'));
+                templateModal.show();
+            });
+        });
+        
+        // Handle confirm button in preview modal
+        document.getElementById('useTemplateConfirm').addEventListener('click', function() {
+            if (currentTemplate) {
+                document.getElementById('sheet_name').value = currentTemplate.sheetName;
+                
+                let dataValue = '';
+                if (currentTemplate.headers) {
+                    dataValue += currentTemplate.headers;
+                }
+                
+                if (currentTemplate.sampleData) {
+                    if (dataValue) {
+                        dataValue += ';';
+                    }
+                    dataValue += currentTemplate.sampleData;
+                }
+                
+                document.getElementById('data').value = dataValue;
+                
+                // Close the modal using Bootstrap 5's built-in API
+                const templateModal = bootstrap.Modal.getInstance(document.getElementById('templatePreviewModal'));
+                if (templateModal) {
+                    templateModal.hide();
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

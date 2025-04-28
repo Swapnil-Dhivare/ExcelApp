@@ -1,0 +1,8 @@
+<form method="POST" action="{{ url_for('add_sheet') }}" id="createSheetForm">
+    {{ form.hidden_tag() }}  <!-- This adds the CSRF token field -->
+    <div class="mb-3">
+        <label for="sheet_name" class="form-label">Sheet Name</label>
+        <input type="text" class="form-control" id="sheet_name" name="sheet_name" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Create Sheet</button>
+</form>

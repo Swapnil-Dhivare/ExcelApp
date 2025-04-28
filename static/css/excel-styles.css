@@ -1,0 +1,1023 @@
+/* Excel-like styling for the sheet editor */
+
+/* Selection styling */
+.sheet-cell.selected, .sheet-header.selected {
+    outline: 2px solid #1a73e8;
+    position: relative;
+    z-index: 2;
+}
+
+.sheet-cell.selected::after, .sheet-header.selected::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 6px;
+    height: 6px;
+    background-color: #1a73e8;
+    z-index: 3;
+}
+
+/* Improved merged cell styling */
+.merged-cell {
+    position: relative;
+    background-color: rgba(248, 249, 250, 0.5) !important;
+    border: 1px solid #dee2e6;
+    box-shadow: inset 0 0 0 1px #fff;
+}
+
+.merged-cell .editable-cell {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.merged-cell.selected {
+    outline: 2px solid #1a73e8;
+    z-index: 5;
+}
+
+/* Hide cells that are part of a merge */
+.hidden-in-merge {
+    display: none !important;
+}
+
+/* Selection range highlighting */
+.selection-area {
+    position: absolute;
+    background-color: rgba(26, 115, 232, 0.1);
+    border: 1px solid #1a73e8;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Cell content styling */
+.editable-cell {
+    width: 100%;
+    height: 100%;
+    min-height: 24px;
+    padding: 4px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.editable-cell:focus {
+    border: 2px solid #4285f4;
+    padding: 2px 4px;
+    overflow: visible;
+    white-space: pre-wrap;
+    z-index: 10;
+}
+
+.editable-cell:focus-within {
+    border: 1px solid #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+    overflow: visible;
+    white-space: pre-wrap;
+    z-index: 15;
+}
+
+/* Formula styling */
+.editable-cell.has-formula {
+    background-color: #e8f0fe;
+}
+
+.editable-cell.formula-result {
+    color: #0b5394;
+}
+
+.editable-cell.formula-error {
+    color: #cc0000;
+    background-color: #ffe6e6;
+}
+
+/* Filter button in header cells */
+.filter-btn {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    background: transparent;
+    border: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    cursor: pointer;
+    z-index: 5;
+}
+
+.sheet-header:hover .filter-btn {
+    opacity: 1;
+}
+
+.filter-btn.active {
+    opacity: 1;
+    color: #0d6efd;
+}
+
+/* Filter menu styling */
+.filter-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    z-index: 1000;
+    width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.filter-section {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.filter-section:last-child {
+    border-bottom: none;
+}
+
+.filter-header {
+    font-weight: bold;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #eee;
+}
+
+.filter-option {
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.filter-option:hover {
+    background-color: #f0f0f0;
+}
+
+.filter-search {
+    margin-bottom: 8px;
+}
+
+.filter-search-input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+.filter-values {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 8px;
+    border: 1px solid #eee;
+    border-radius: 3px;
+    padding: 4px;
+}
+
+.filter-value-option {
+    padding: 3px 0;
+}
+
+.filter-actions {
+    display: flex;
+    justify-content: space-between;
+    position: sticky;
+    bottom: 0;
+    background-color: white;
+    padding: 8px;
+    border-top: 1px solid #eee;
+    z-index: 2;
+}
+
+/* Filtered row */
+.filtered-out {
+    display: none !important;
+}
+
+/* Data validation style */
+.invalid-cell {
+    background-color: #fff4e5;
+    position: relative;
+}
+
+.invalid-cell::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    border-width: 0 8px 8px 0;
+    border-style: solid;
+    border-color: #ff6b6b transparent;
+}
+
+.validation-error {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-width: 0 8px 8px 0;
+    border-style: solid;
+    border-color: #cc0000 transparent;
+}
+
+/* Cell with dropdown validation */
+.dropdown-icon {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 16px;
+    height: 16px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.dropdown-icon:hover {
+    background: #e9ecef;
+}
+
+.dropdown-icon i {
+    font-size: 10px;
+    color: #6c757d;
+}
+
+/* Cell dropdown menu */
+.cell-dropdown {
+    position: absolute;
+    z-index: 1100;
+    background: white;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.cell-dropdown-item {
+    padding: 4px 8px;
+    cursor: default;
+}
+
+.cell-dropdown-item:hover {
+    background-color: #f0f0f0;
+}
+
+/* Comments in cells */
+.cell-with-comment {
+    position: relative;
+}
+
+.cell-with-comment::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    border-width: 0 8px 8px 0;
+    border-style: solid;
+    border-color: transparent #ff9800 transparent transparent;
+}
+
+.cell-comment {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-width: 0 8px 8px 0;
+    border-style: solid;
+    border-color: transparent #ff9800 transparent transparent;
+}
+
+.comment-tooltip {
+    position: absolute;
+    background-color: #fffde7;
+    border: 1px solid #ffd600;
+    padding: 8px;
+    border-radius: 3px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-width: 250px;
+    display: none;
+}
+
+.cell-with-comment:hover .comment-tooltip {
+    display: block;
+}
+
+.sheet-cell:hover .comment-tooltip {
+    display: block;
+}
+
+/* Animation for invalid cell */
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(5px); }
+    50% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+    100% { transform: translateX(0); }
+}
+
+.shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Add freeze panes styling */
+.frozen-column {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background-color: #f8f9fa;
+}
+
+.frozen-row {
+    position: sticky;
+    top: 30px; /* Account for column headers */
+    z-index: 10;
+    background-color: #f8f9fa;
+}
+
+/* Print styling */
+@media print {
+    .excel-header, .excel-toolbar, .excel-status-bar, .toast-container {
+        display: none !important;
+    }
+    
+    .sheet-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .sheet-table td, .sheet-table th {
+        border: 1px solid #000;
+    }
+}
+
+/* Context menu */
+.context-menu {
+    position: fixed !important;
+    z-index: 1000;
+    background-color: white;
+    min-width: 180px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.context-menu-item:hover {
+    background-color: #f8f9fa;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background-color: #e9ecef;
+    margin: 4px 0;
+}
+
+/* Context menu for resizing */
+#resize-context-menu {
+    position: absolute;
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border-radius: 4px;
+    min-width: 180px;
+}
+
+.context-menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.context-menu-item:hover {
+    background-color: #f0f0f0;
+}
+
+.context-menu-divider {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 4px 0;
+}
+
+/* Clipboard helper (invisible) */
+#clipboard-helper {
+    position: fixed;
+    left: -9999px;
+    top: -9999px;
+}
+
+/* Conditional formatting */
+.conditional-highlight {
+    background-color: #e6f7ff !important;
+}
+
+.conditional-warning {
+    background-color: #fff9e6 !important;
+}
+
+.conditional-error {
+    background-color: #ffe6e6 !important;
+}
+
+.conditional-success {
+    background-color: #e6ffe6 !important;
+}
+
+/* Data type icons */
+.data-type-icon {
+    display: inline-block;
+    margin-right: 4px;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+.text-cell .data-type-icon::before {
+    content: 'Aa';
+    font-size: 10px;
+    color: #666;
+}
+
+.number-cell .data-type-icon::before {
+    content: '#';
+    font-size: 12px;
+    color: #0b5394;
+}
+
+.date-cell .data-type-icon::before {
+    content: '📅';
+    font-size: 12px;
+}
+
+/* Cell types */
+.number-cell {
+    text-align: right;
+}
+
+.date-cell {
+    text-align: center;
+    color: #0b5394;
+}
+
+.formula-cell {
+    color: #0b5394;
+    background-color: #f5f5f5;
+}
+
+.percentage-cell::after {
+    content: '%';
+    margin-left: 2px;
+}
+
+.currency-cell::before {
+    content: '$';
+    margin-right: 1px;
+}
+
+/* Improved resize handlers */
+.col-resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px; /* Wider handle for easier grabbing */
+    height: 100%;
+    cursor: col-resize;
+    z-index: 25;
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+
+.col-resize-handle:hover {
+    background-color: rgba(66, 133, 244, 0.5);
+}
+
+.row-resize-handle {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 8px; /* Taller handle for easier grabbing */
+    cursor: row-resize;
+    z-index: 25;
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+
+.row-resize-handle:hover {
+    background-color: rgba(66, 133, 244, 0.5);
+}
+
+/* Resize preview line with smoother appearance */
+.resize-preview {
+    position: fixed;
+    display: none;
+    width: 2px;
+    background-color: #0d6efd;
+    z-index: 1050;
+    pointer-events: none;
+    box-shadow: 0 0 3px rgba(13, 110, 253, 0.5);
+    height: 100%;
+}
+
+.resize-line {
+    position: fixed !important;
+    background-color: #4285f4;
+    z-index: 9999;
+    pointer-events: none;
+    box-shadow: 0 0 3px rgba(66, 133, 244, 0.5);
+    opacity: 0.7;
+}
+
+/* Size indicator with improved styling */
+.size-indicator {
+    position: fixed;
+    background-color: #212529;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.15s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.2);
+    /* Make sure it doesn't stay stuck on screen */
+    animation: fade-out 5s forwards;
+}
+
+/* Fade out animation as a fallback to make sure indicators don't get stuck */
+@keyframes fade-out {
+    0% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; visibility: hidden; }
+}
+
+/* Add position:fixed to other UI elements that might interfere */
+.resize-preview, .row-resize-preview {
+    position: fixed !important;
+    z-index: 2000;
+}
+
+/* Resize overlay to prevent interactions during resize */
+.resize-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1500;
+    display: none;
+    background-color: transparent;
+    cursor: inherit;
+}
+
+/* Ensure tooltips and popovers don't get stuck */
+.tooltip, .popover {
+    animation: fade-out 3s forwards;
+}
+
+/* Make sure all modals and overlays don't interfere with resize operations */
+.modal-backdrop {
+    z-index: 1040;
+}
+
+/* Force hardware acceleration for smoother animations */
+.size-indicator, .resize-preview, .row-resize-preview {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: opacity, transform;
+}
+
+/* Highlight columns during hover and resize */
+.col-highlight {
+    background-color: rgba(240, 245, 255, 0.4);
+}
+
+.resizing-column {
+    background-color: rgba(240, 245, 255, 0.7);
+    transition: background-color 0.15s ease;
+}
+
+/* Smooth resizing for cells */
+.sheet-cell, .sheet-header, .excel-column-header {
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Resizing cursor states */
+body.resizing {
+    cursor: col-resize !important;
+    user-select: none;
+}
+
+body.resizing * {
+    cursor: col-resize !important;
+}
+
+/* Create a subtle grid effect for better visualization */
+.sheet-table {
+    border-collapse: collapse;
+    min-width: 100%;
+    table-layout: fixed;
+}
+
+.sheet-table td, .sheet-table th {
+    border: 1px solid #dee2e6;
+    transition: width 0.15s ease-in-out, 
+                height 0.15s ease-in-out,
+                background-color 0.15s ease;
+}
+
+/* Add responsive touch support for mobile */
+@media (max-width: 768px) {
+    .col-resize-handle {
+        width: 12px; /* Wider for touch devices */
+    }
+    
+    .row-resize-handle {
+        height: 12px; /* Even taller on touch screens */
+    }
+    
+    .size-indicator {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+    
+    .excel-toolbar {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .formatting-panel {
+        overflow-x: auto;
+    }
+    
+    .formatting-panel .row {
+        flex-wrap: nowrap;
+    }
+}
+
+/* Resize handlers */
+.col-resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px; /* Wider handle for easier grabbing */
+    height: 100%;
+    cursor: col-resize;
+    z-index: 25;
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+
+.col-resize-handle:hover {
+    background-color: rgba(66, 133, 244, 0.5);
+}
+
+.row-resize-handle {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 8px; /* Taller handle for easier grabbing */
+    cursor: row-resize;
+    z-index: 25;
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+
+.row-resize-handle:hover {
+    background-color: rgba(66, 133, 244, 0.5);
+}
+
+/* Resize guide line */
+.resize-line {
+    position: fixed !important;
+    background-color: #4285f4;
+    z-index: 9999;
+    pointer-events: none;
+    box-shadow: 0 0 3px rgba(66, 133, 244, 0.5);
+    opacity: 0.7;
+}
+
+/* Size indicator */
+.size-indicator {
+    position: fixed;
+    background-color: #212529;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 9999;
+    pointer-events: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    opacity: 1;
+}
+
+/* Resizing cursor states */
+body.resizing {
+    cursor: none !important;
+    user-select: none;
+}
+
+body.column-resize * {
+    cursor: col-resize !important;
+}
+
+body.row-resize * {
+    cursor: row-resize !important;
+}
+
+/* Make sure cells respect their dimensions */
+.sheet-cell, .sheet-header {
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Excel table specific styles */
+.sheet-table {
+    table-layout: fixed;
+    border-collapse: collapse;
+    width: auto;
+}
+
+.sheet-table th, .sheet-table td {
+    position: relative;
+    overflow: visible;
+}
+
+.excel-column-header {
+    position: relative;
+    overflow: visible;
+}
+
+/* Add pointer cursor to resize handles for better UX */
+.col-resize-handle, .row-resize-handle {
+    touch-action: none;
+}
+
+/* Formatting panel styling */
+.formatting-panel {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 8px 15px;
+}
+
+/* Improve formatting panel layout */
+.formatting-panel .row {
+    flex-wrap: nowrap;
+    margin-bottom: 10px;
+}
+
+.formatting-panel .col-auto {
+    margin-bottom: 5px;
+    padding: 0 5px;
+}
+
+/* Fix labels in formatting panel */
+.formatting-panel label, 
+.formatting-panel .form-label {
+    font-size: 14px;
+    margin-bottom: 5px;
+    display: block;
+    white-space: nowrap;
+}
+
+/* Prevent dropdowns from going off screen */
+.dropdown-menu {
+    position: fixed !important; /* Use fixed instead of absolute */
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 1500;
+    max-width: 90vw; /* Prevent horizontal overflow */
+}
+
+/* Ensure dropdown-menu-end aligns properly */
+.dropdown-menu-end {
+    right: 0 !important;
+    left: auto !important;
+}
+
+/* Fix buttons in modals and dropdown menus */
+.modal-footer,
+.dropdown-menu .btn-group {
+    position: sticky;
+    bottom: 0;
+    background-color: white;
+    padding: 8px 0;
+    z-index: 2;
+}
+
+/* Ensure the format panel scrolls horizontally on small screens */
+.formatting-panel .row {
+    flex-wrap: nowrap;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 992px) {
+    .excel-header .btn-group .dropdown-menu {
+        left: auto;
+        right: 0;
+    }
+    
+    .navbar .dropdown-menu {
+        position: absolute !important;
+    }
+}
+
+/* Active state for the format button */
+.btn.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Make formatting buttons more visible */
+.formatting-panel .btn-group {
+    margin-right: 8px;
+}
+
+.formatting-panel .btn-sm {
+    padding: 0.25rem 0.5rem;
+}
+
+.formatting-panel .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Add button tooltips */
+[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    text-align: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Ensure modal doesn't go out of screen */
+.modal-dialog {
+    max-width: 90vw;
+    margin: 10px auto;
+}
+
+.modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Keyboard shortcut helper */
+.keyboard-shortcuts-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.keyboard-shortcuts-table th,
+.keyboard-shortcuts-table td {
+    padding: 6px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.keyboard-shortcuts-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.keyboard-shortcut-key {
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 0 2px;
+    background: #f1f3f5;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+/* Performance optimizations for Excel-like UI */
+
+/* Add hardware acceleration for better rendering performance */
+.sheet-table, .excel-column-headers, .excel-workspace {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Make header cells selectable like normal cells */
+.selectable-header {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Style for selected header cells */
+th.selected, .excel-column-header.selected {
+    background-color: rgba(33, 115, 70, 0.1) !important;
+    outline: 2px solid #217346 !important;
+    z-index: 5;
+}
+
+/* Batch selection overlay for improved performance with many selected cells */
+.selection-overlay {
+    position: absolute;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+/* Use composited layers for better scroll and resize performance */
+.sheet-table, .editable-cell, .excel-workspace {
+    will-change: transform;
+}
+
+/* Reduce DOM complexity by using pseudo-elements where possible */
+.sheet-cell:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.sheet-cell.selected:after {
+    background-color: rgba(33, 115, 70, 0.1);
+    outline: 2px solid #217346;
+    z-index: -1;
+}
+
+/* Optimize transition performance */
+.col-resize-handle, .row-resize-handle {
+    transition: background-color 0.1s ease;
+}
+
+/* Improve hover effects performance */
+@media (hover: hover) {
+    .col-resize-handle:hover, .row-resize-handle:hover {
+        background-color: rgba(13, 110, 253, 0.5);
+    }
+}
+
+/* Reduce paint area during scrolling */
+@media (max-width: 768px) {
+    .excel-workspace {
+        transform: translate3d(0,0,0);
+    }
+}
+
+/* Fixed positioning for web app - MODIFIED to allow scrolling on non-sheet pages */
+html, body {
+    height: 100%;
+    /* Only apply overflow hidden to the sheet editor page */
+}
+
+body:not(.sheet-editor-page) {
+    overflow: auto !important; /* Enable scrolling for all other pages */
+    height: auto;
+}
+
+body.sheet-editor-page {
+    overflow: hidden; /* Keep the Excel sheet editor fixed */
+}
+
+.excel-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 56px);
+    background-color: #ffffff;
+    overflow: hidden;
+}

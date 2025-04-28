@@ -1,25 +1,45 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Only run preview functionality if we're on a page with the preview elements
-    const previewTable = document.getElementById('previewTable');
-    if (!previewTable) {
-        // We're not on a page with preview functionality - exit early
+    console.log("Preview.js is loaded");
+    
+    // Flag to track initialization state - prevents duplicate initialization
+    if (window.previewInitialized) {
+        console.log("Preview.js already initialized, skipping");
         return;
     }
     
-    // Get elements
-    const sheetNameInput = document.getElementById('sheet_name');
-    const dataInput = document.getElementById('data');
-    const formatControls = document.querySelectorAll('[data-preview]');
+    window.previewInitialized = true;
     
-    // Preview text element for format testing
+    // Global object to store preview state
+    window.previewState = {
+        selectedCells: []
+    };
+    
+    // Safely access elements - returns null if element doesn't exist
+    function safeGetElement(id) {
+        return document.getElementById(id);
+    }
+    
+    // Get previewTable element safely
+    const previewTable = safeGetElement('previewTable');
+    // Set up data elements
+    const sheetNameInput = safeGetElement('sheet_name');
+    const dataInput = safeGetElement('data');
+    const formatControls = document.querySelectorAll('[data-preview]');
     const previewText = document.querySelector('.preview-text');
     
-    // Initialize color palettes
-    initColorPalettes();
+    // Only initialize color palettes if needed elements exist
+    const needsColorPalettes = document.querySelector('.dropdown-menu.color-palette-dropdown');
+    if (needsColorPalettes) {
+        initColorPalettes();
+    }
     
-    // Update data preview
+    // Update data preview if table exists
     function updateDataPreview(data) {
+        if (!previewTable) return;
+        
         const tbody = previewTable.querySelector('tbody');
+        if (!tbody) return;
+        
         tbody.innerHTML = '';
 
         const rows = data.split(';');
@@ -42,53 +62,53 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update format preview
     function updateFormatPreview() {
+        if (!previewText) return;
+        
         const formatting = {
-            'font-family': document.getElementById('font_name')?.value || 'Arial',
-            'font-size': `${document.getElementById('font_size')?.value || 11}px`,
-            'font-weight': document.getElementById('font_bold')?.checked ? 'bold' : 'normal',
-            'font-style': document.getElementById('font_italic')?.checked ? 'italic' : 'normal',
-            'color': document.getElementById('font_color')?.value || '#000000',
-            'text-align': document.getElementById('cell_alignment')?.value || 'left',
-            'vertical-align': document.getElementById('vertical_alignment')?.value || 'middle'
+            'font-family': safeGetElement('font_name')?.value || 'Arial',
+            'font-size': `${safeGetElement('font_size')?.value || 11}px`,
+            'font-weight': safeGetElement('font_bold')?.checked ? 'bold' : 'normal',
+            'font-style': safeGetElement('font_italic')?.checked ? 'italic' : 'normal',
+            'color': safeGetElement('font_color')?.value || '#000000',
+            'text-align': safeGetElement('cell_alignment')?.value || 'left',
+            'vertical-align': safeGetElement('vertical_alignment')?.value || 'middle'
         };
         
         // Special handling for background color
-        const bgColor = document.getElementById('cell_bg_color')?.value;
+        const bgColor = safeGetElement('cell_bg_color')?.value;
         if (bgColor === 'transparent') {
-            if (previewText) {
-                previewText.style.backgroundColor = '';
-            }
+            previewText.style.backgroundColor = '';
         } else {
             formatting['background-color'] = bgColor || '#FFFFFF';
         }
         
         // Apply to preview text
-        if (previewText) {
-            Object.assign(previewText.style, formatting);
-        }
+        Object.assign(previewText.style, formatting);
         
-        // Apply to preview table cells
-        previewTable.querySelectorAll('td').forEach(cell => {
-            applyFormatting(cell);
-        });
+        // Apply to preview table cells if table exists
+        if (previewTable) {
+            previewTable.querySelectorAll('td').forEach(cell => {
+                applyFormatting(cell);
+            });
+        }
     }
     
     // Apply formatting to an element
     function applyFormatting(element) {
         const formatting = {
-            'font-family': document.getElementById('font_name')?.value || 'Arial',
-            'font-size': `${document.getElementById('font_size')?.value || 11}px`,
-            'font-weight': document.getElementById('font_bold')?.checked ? 'bold' : 'normal',
-            'font-style': document.getElementById('font_italic')?.checked ? 'italic' : 'normal',
-            'color': document.getElementById('font_color')?.value || '#000000',
-            'text-align': document.getElementById('cell_alignment')?.value || 'left',
-            'vertical-align': document.getElementById('vertical_alignment')?.value || 'middle',
-            'border': document.getElementById('all_borders')?.checked ? '1px solid #000' : 'none',
+            'font-family': safeGetElement('font_name')?.value || 'Arial',
+            'font-size': `${safeGetElement('font_size')?.value || 11}px`,
+            'font-weight': safeGetElement('font_bold')?.checked ? 'bold' : 'normal',
+            'font-style': safeGetElement('font_italic')?.checked ? 'italic' : 'normal',
+            'color': safeGetElement('font_color')?.value || '#000000',
+            'text-align': safeGetElement('cell_alignment')?.value || 'left',
+            'vertical-align': safeGetElement('vertical_alignment')?.value || 'middle',
+            'border': safeGetElement('all_borders')?.checked ? '1px solid #000' : 'none',
             'padding': '4px'
         };
         
         // Special handling for background color
-        const bgColor = document.getElementById('cell_bg_color')?.value;
+        const bgColor = safeGetElement('cell_bg_color')?.value;
         if (bgColor === 'transparent') {
             element.style.backgroundColor = ''; // Remove background color
         } else {
@@ -124,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render color palettes in all dropdown menus
     function renderColorPalettes(excelColors, standardColors) {
         const colorDropdowns = document.querySelectorAll('.dropdown-menu.color-palette-dropdown');
+        if (!colorDropdowns.length) return; // Exit if no color dropdowns
         
         colorDropdowns.forEach(dropdown => {
             // Create the theme colors section
@@ -214,17 +235,23 @@ document.addEventListener('DOMContentLoaded', function() {
     function connectColorDropdowns(excelColors, standardColors) {
         // Handle all color dropdowns with color-palette-dropdown class
         const colorDropdowns = document.querySelectorAll('.dropdown-menu.color-palette-dropdown');
+        if (!colorDropdowns.length) return;
         
         colorDropdowns.forEach(dropdown => {
             const dropdownId = dropdown.getAttribute('aria-labelledby');
+            if (!dropdownId) return;
+            
             const dropdownButton = document.getElementById(dropdownId);
-            const colorPreviewSpan = dropdownButton?.querySelector('.color-preview');
+            if (!dropdownButton) return;
+            
+            const colorPreviewSpan = dropdownButton.querySelector('.color-preview');
             const hiddenInput = getAssociatedInput(dropdownId);
             
             // Set up all color cells in this dropdown
             const colorCells = dropdown.querySelectorAll('.color-cell');
             colorCells.forEach(cell => {
                 const color = cell.getAttribute('data-color');
+                if (!color) return;
                 
                 // Update color on click
                 cell.addEventListener('click', function(e) {
@@ -276,10 +303,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         hiddenInput.dispatchEvent(event);
                     }
                     
-                    // Hide dropdown
-                    const bsDropdown = bootstrap.Dropdown.getInstance(dropdownButton);
-                    if (bsDropdown) {
-                        bsDropdown.hide();
+                    // Hide dropdown safely
+                    try {
+                        if (typeof bootstrap !== 'undefined') {
+                            const bsDropdown = bootstrap.Dropdown.getInstance(dropdownButton);
+                            if (bsDropdown) {
+                                bsDropdown.hide();
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('Error hiding dropdown:', err);
                     }
                     
                     // Refresh preview if available
@@ -355,43 +388,51 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Helper function to find the associated input for a color dropdown
     function getAssociatedInput(dropdownId) {
+        if (!dropdownId) return null;
+        
         switch(dropdownId) {
             case 'textColorDropdown':
-                return document.getElementById('customTextColor') || document.getElementById('font_color');
+                return safeGetElement('customTextColor') || safeGetElement('font_color');
             case 'fillColorDropdown':
-                return document.getElementById('customFillColor') || document.getElementById('cell_bg_color');
+                return safeGetElement('customFillColor') || safeGetElement('cell_bg_color');
             case 'borderColorDropdown':
-                return document.getElementById('customBorderColor') || document.getElementById('border_color');
+                return safeGetElement('customBorderColor') || safeGetElement('border_color');
             default:
                 return null;
         }
     }
     
-    // Event listeners
+    // Event listeners - set up only if elements exist
     if (dataInput) {
         dataInput.addEventListener('input', function() {
             updateDataPreview(this.value);
         });
     }
     
-    formatControls.forEach(control => {
-        control.addEventListener('change', () => {
-            updateFormatPreview();
-            if (dataInput) {
-                updateDataPreview(dataInput.value);
-            }
+    if (formatControls.length) {
+        formatControls.forEach(control => {
+            control.addEventListener('change', () => {
+                updateFormatPreview();
+                if (dataInput) {
+                    updateDataPreview(dataInput.value);
+                }
+            });
         });
-    });
+    }
     
-    // Initial preview
-    updateFormatPreview();
+    // Initial preview - only if needed elements exist
+    if (previewText) {
+        updateFormatPreview();
+    }
+    
     if (dataInput) {
         updateDataPreview(dataInput.value);
     }
     
     // Make loadSheetPreview globally accessible
     window.loadSheetPreview = function(sheetName) {
-        const sheetsDataInput = document.getElementById('sheets-data');
+        // Get sheets data
+        const sheetsDataInput = safeGetElement('sheets-data');
         if (!sheetsDataInput) {
             console.error('sheets-data element not found');
             return;
@@ -407,17 +448,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const sheet = sheets.find(s => s.sheet_name === sheetName);
         if (!sheet || !sheet.data || !sheet.data.length) {
-            console.error('Sheet or data not found');
+            console.error('Sheet or data not found for:', sheetName);
             return;
         }
         
         // Get preview elements
-        const previewModal = document.getElementById('previewModal');
-        const previewTitle = document.getElementById('previewModalLabel');
-        const previewContent = document.getElementById('previewContent');
+        const previewModal = safeGetElement('previewModal');
+        const previewTitle = safeGetElement('previewModalLabel');
+        const previewContent = safeGetElement('previewContent');
         
-        if (!previewModal || !previewTitle || !previewContent) {
-            console.error('Preview modal elements not found');
+        if (!previewModal) {
+            console.error('Preview modal element not found');
+            return;
+        }
+        
+        if (!previewTitle) {
+            console.error('Preview modal title element not found');
+            return;
+        }
+        
+        if (!previewContent) {
+            console.error('Preview content element not found');
             return;
         }
         
@@ -427,191 +478,284 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show loading indicator
         previewContent.innerHTML = '<div class="d-flex justify-content-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
         
-        // Create preview table
-        const table = document.createElement('table');
-        table.className = 'table table-bordered table-sm sheet-table';
-        
-        const thead = document.createElement('thead');
-        const tbody = document.createElement('tbody');
-        
-        // Process headers
-        if (sheet.data.length > 0) {
-            const headerRow = document.createElement('tr');
+        // Create and populate the preview table
+        try {
+            // Create preview table
+            const table = document.createElement('table');
+            table.className = 'table table-bordered table-sm sheet-table';
+            table.id = 'previewTable'; // Important for referring to it later
             
-            // Add row header column
-            const cornerCell = document.createElement('th');
-            cornerCell.className = 'sheet-header bg-light';
-            cornerCell.innerHTML = '<i class="bi bi-grid-3x3"></i>';
-            headerRow.appendChild(cornerCell);
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
             
-            // Add column headers (A, B, C, etc.)
-            sheet.data[0].forEach((header, idx) => {
-                const th = document.createElement('th');
-                th.className = 'sheet-header bg-light';
+            // Process headers
+            if (sheet.data.length > 0) {
+                const headerRow = document.createElement('tr');
                 
-                // Use column letter (A, B, C) instead of index
-                const colLetter = String.fromCharCode(65 + idx);
-                th.textContent = colLetter;
+                // Add row header column
+                const cornerCell = document.createElement('th');
+                cornerCell.className = 'sheet-header bg-light';
+                cornerCell.innerHTML = '<i class="bi bi-grid-3x3"></i>';
+                headerRow.appendChild(cornerCell);
                 
-                headerRow.appendChild(th);
-            });
-            
-            thead.appendChild(headerRow);
-        }
-        
-        // Process data rows
-        sheet.data.forEach((row, rowIdx) => {
-            const tr = document.createElement('tr');
-            
-            // Add row header (1, 2, 3, etc.)
-            const rowHeader = document.createElement('th');
-            rowHeader.className = 'row-header bg-light text-center';
-            rowHeader.textContent = rowIdx + 1;
-            tr.appendChild(rowHeader);
-            
-            // Add cells
-            row.forEach((cellData, colIdx) => {
-                const td = document.createElement('td');
-                td.className = 'sheet-cell';
-                
-                // Create editable cell div
-                const editableDiv = document.createElement('div');
-                editableDiv.className = 'editable-cell';
-                
-                // Check if it's a formula
-                if (typeof cellData === 'string' && cellData.trim().startsWith('=')) {
-                    td.classList.add('formula-cell');
-                    editableDiv.textContent = cellData;
+                // Add column headers (A, B, C, etc.)
+                sheet.data[0].forEach((header, idx) => {
+                    const th = document.createElement('th');
+                    th.className = 'sheet-header bg-light';
                     
-                    // Add info about formula
-                    td.setAttribute('data-formula', cellData);
-                } else {
-                    editableDiv.textContent = cellData;
-                }
-                
-                // Apply cell formatting if available
-                if (sheet.format_info && sheet.format_info.cells) {
-                    const cellRef = `${String.fromCharCode(65 + colIdx)}${rowIdx + 1}`;
-                    const format = sheet.format_info.cells[cellRef];
+                    // Use column letter (A, B, C) instead of index
+                    const colLetter = String.fromCharCode(65 + idx);
+                    th.textContent = colLetter;
                     
-                    if (format) {
-                        // Apply font
-                        if (format.font) {
-                            editableDiv.style.fontFamily = format.font.name || 'inherit';
-                            editableDiv.style.fontSize = `${format.font.size || 11}px`;
-                            editableDiv.style.fontWeight = format.font.bold ? 'bold' : 'normal';
-                            editableDiv.style.fontStyle = format.font.italic ? 'italic' : 'normal';
-                            
-                            if (format.font.color) {
-                                editableDiv.style.color = format.font.color;
-                            }
-                        }
+                    headerRow.appendChild(th);
+                });
+                
+                thead.appendChild(headerRow);
+            }
+            
+            // Initialize selected cells array for formatting functions
+            window.previewState.selectedCells = [];
+            
+            // Process data rows
+            sheet.data.forEach((row, rowIdx) => {
+                const tr = document.createElement('tr');
+                
+                // Add row header (1, 2, 3, etc.)
+                const rowHeader = document.createElement('th');
+                rowHeader.className = 'row-header bg-light text-center';
+                rowHeader.textContent = rowIdx + 1;
+                tr.appendChild(rowHeader);
+                
+                // Add cells
+                row.forEach((cellData, colIdx) => {
+                    const td = document.createElement('td');
+                    td.className = 'sheet-cell';
+                    td.setAttribute('data-row', rowIdx);
+                    td.setAttribute('data-col', colIdx);
+                    
+                    // Create editable cell div
+                    const editableDiv = document.createElement('div');
+                    editableDiv.className = 'editable-cell';
+                    
+                    // Check if it's a formula
+                    if (typeof cellData === 'string' && cellData.trim().startsWith('=')) {
+                        td.classList.add('formula-cell');
+                        editableDiv.textContent = cellData;
                         
-                        // Apply background color
-                        if (format.fill && format.fill.color) {
-                            editableDiv.style.backgroundColor = format.fill.color;
-                        }
-                        
-                        // Apply alignment
-                        if (format.alignment) {
-                            editableDiv.style.textAlign = format.alignment.horizontal || 'left';
-                            editableDiv.style.verticalAlign = format.alignment.vertical || 'middle';
-                        }
-                        
-                        // Apply border
-                        if (format.border) {
-                            const borderStyle = format.border.double ? '2px double' : '1px solid';
-                            editableDiv.style.border = `${borderStyle} #000`;
-                        }
+                        // Add info about formula
+                        td.setAttribute('data-formula', cellData);
+                    } else {
+                        editableDiv.textContent = cellData;
                     }
-                }
+                    
+                    // Add click event to select cell
+                    td.addEventListener('click', function(event) {
+                        // Clear previous selections if not holding Ctrl/Cmd
+                        if (!(event.ctrlKey || event.metaKey)) {
+                            window.previewState.selectedCells.forEach(cell => cell.classList.remove('selected'));
+                            window.previewState.selectedCells = [];
+                        }
+                        
+                        // Toggle selection for this cell
+                        if (window.previewState.selectedCells.includes(this)) {
+                            this.classList.remove('selected');
+                            window.previewState.selectedCells = window.previewState.selectedCells.filter(cell => cell !== this);
+                        } else {
+                            this.classList.add('selected');
+                            window.previewState.selectedCells.push(this);
+                        }
+                        
+                        // Update formatting buttons based on selection
+                        updateFormattingButtonStates();
+                    });
+                    
+                    td.appendChild(editableDiv);
+                    tr.appendChild(td);
+                });
                 
-                td.appendChild(editableDiv);
-                tr.appendChild(td);
+                tbody.appendChild(tr);
             });
             
-            tbody.appendChild(tr);
-        });
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            
+            // Wrap table in responsive div
+            const tableWrapper = document.createElement('div');
+            tableWrapper.className = 'table-responsive';
+            tableWrapper.appendChild(table);
+            
+            // Update preview content
+            previewContent.innerHTML = '';
+            previewContent.appendChild(tableWrapper);
+            
+            // Add Excel-like toolbar above the table safely
+            addFormattingToolbar(previewContent, tableWrapper);
+            
+            // Show the modal safely
+            try {
+                if (typeof bootstrap !== 'undefined') {
+                    const modal = new bootstrap.Modal(previewModal);
+                    modal.show();
+                } else {
+                    console.error('Bootstrap not available for showing modal');
+                }
+            } catch (err) {
+                console.error('Error showing modal:', err);
+            }
+        } catch (err) {
+            console.error('Error creating preview table:', err);
+            previewContent.innerHTML = `<div class="alert alert-danger">Error creating preview: ${err.message}</div>`;
+        }
+    };
+    
+    // Add formatting toolbar to preview
+    function addFormattingToolbar(container, tableWrapper) {
+        if (!container || !tableWrapper) return;
         
-        table.appendChild(thead);
-        table.appendChild(tbody);
-        
-        // Wrap table in responsive div
-        const tableWrapper = document.createElement('div');
-        tableWrapper.className = 'table-responsive';
-        tableWrapper.appendChild(table);
-        
-        // Update preview content
-        previewContent.innerHTML = '';
-        previewContent.appendChild(tableWrapper);
-        
-        // Add Excel-like toolbar above the table
+        // Create formatting toolbar 
         const toolbar = document.createElement('div');
         toolbar.className = 'excel-toolbar mb-3';
         toolbar.innerHTML = `
             <div class="btn-toolbar" role="toolbar">
                 <div class="btn-group me-2" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Bold">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="boldBtn" title="Bold">
                         <i class="bi bi-type-bold"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Italic">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="italicBtn" title="Italic">
                         <i class="bi bi-type-italic"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Underline">
-                        <i class="bi bi-type-underline"></i>
-                    </button>
                 </div>
                 
                 <div class="btn-group me-2" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Align Left">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="alignLeftBtn" title="Align Left">
                         <i class="bi bi-text-left"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Align Center">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="alignCenterBtn" title="Align Center">
                         <i class="bi bi-text-center"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Align Right">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="alignRightBtn" title="Align Right">
                         <i class="bi bi-text-right"></i>
-                    </button>
-                </div>
-                
-                <div class="btn-group me-2" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Format as Number">
-                        <i class="bi bi-123"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Format as Currency">
-                        <i class="bi bi-currency-dollar"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Format as Percentage">
-                        <i class="bi bi-percent"></i>
-                    </button>
-                </div>
-                
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Add Chart">
-                        <i class="bi bi-bar-chart"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Add Function">
-                        <i class="bi bi-calculator"></i>
                     </button>
                 </div>
             </div>
         `;
         
-        previewContent.insertBefore(toolbar, tableWrapper);
+        // Insert toolbar before the table
+        container.insertBefore(toolbar, tableWrapper);
         
-        // Add formula bar
-        const formulaBar = document.createElement('div');
-        formulaBar.className = 'formula-bar mb-2';
-        formulaBar.innerHTML = `
-            <div class="cell-address">A1</div>
-            <input type="text" class="formula-input form-control form-control-sm" placeholder="fx">
-        `;
+        // Connect toolbar buttons
+        connectFormattingButtons();
+    }
+    
+    // Connect formatting buttons to their actions
+    function connectFormattingButtons() {
+        // Bold button
+        const boldBtn = safeGetElement('boldBtn');
+        if (boldBtn) {
+            boldBtn.addEventListener('click', function() {
+                applyStyleToSelection('fontWeight', function(currentValue) {
+                    return (currentValue === 'bold' || parseInt(currentValue) >= 700) ? 'normal' : 'bold';
+                });
+            });
+        }
         
-        previewContent.insertBefore(formulaBar, tableWrapper);
+        // Italic button
+        const italicBtn = safeGetElement('italicBtn');
+        if (italicBtn) {
+            italicBtn.addEventListener('click', function() {
+                applyStyleToSelection('fontStyle', function(currentValue) {
+                    return currentValue === 'italic' ? 'normal' : 'italic';
+                });
+            });
+        }
         
-        // Show the modal
-        const modal = new bootstrap.Modal(previewModal);
-        modal.show();
-    };
+        // Align buttons
+        const alignLeftBtn = safeGetElement('alignLeftBtn');
+        if (alignLeftBtn) {
+            alignLeftBtn.addEventListener('click', function() {
+                applyStyleToSelection('textAlign', () => 'left');
+            });
+        }
+        
+        const alignCenterBtn = safeGetElement('alignCenterBtn');
+        if (alignCenterBtn) {
+            alignCenterBtn.addEventListener('click', function() {
+                applyStyleToSelection('textAlign', () => 'center');
+            });
+        }
+        
+        const alignRightBtn = safeGetElement('alignRightBtn');
+        if (alignRightBtn) {
+            alignRightBtn.addEventListener('click', function() {
+                applyStyleToSelection('textAlign', () => 'right');
+            });
+        }
+    }
+    
+    // Apply style to all selected cells
+    function applyStyleToSelection(styleProperty, styleValueFn) {
+        const selectedCells = window.previewState.selectedCells || [];
+        if (!selectedCells.length) {
+            console.log('No cells selected');
+            return;
+        }
+        
+        selectedCells.forEach(cell => {
+            const editableDiv = cell.querySelector('.editable-cell');
+            if (!editableDiv) return;
+            
+            const currentValue = window.getComputedStyle(editableDiv)[styleProperty];
+            const newValue = styleValueFn(currentValue);
+            editableDiv.style[styleProperty] = newValue;
+        });
+        
+        // Update formatting buttons to reflect the new state
+        updateFormattingButtonStates();
+    }
+    
+    // Update button states based on current selection
+    function updateFormattingButtonStates() {
+        const selectedCells = window.previewState.selectedCells || [];
+        if (!selectedCells.length) return;
+        
+        // Get the first selected cell for button states
+        const firstCell = selectedCells[0];
+        const editableDiv = firstCell.querySelector('.editable-cell');
+        if (!editableDiv) return;
+        
+        const style = window.getComputedStyle(editableDiv);
+        
+        // Update bold button
+        const boldBtn = safeGetElement('boldBtn');
+        if (boldBtn) {
+            const isBold = style.fontWeight === 'bold' || parseInt(style.fontWeight) >= 700;
+            boldBtn.classList.toggle('active', isBold);
+        }
+        
+        // Update italic button
+        const italicBtn = safeGetElement('italicBtn');
+        if (italicBtn) {
+            const isItalic = style.fontStyle === 'italic';
+            italicBtn.classList.toggle('active', isItalic);
+        }
+        
+        // Update alignment buttons
+        const textAlign = style.textAlign;
+        
+        const alignLeftBtn = safeGetElement('alignLeftBtn');
+        if (alignLeftBtn) {
+            alignLeftBtn.classList.toggle('active', textAlign === 'left');
+        }
+        
+        const alignCenterBtn = safeGetElement('alignCenterBtn');
+        if (alignCenterBtn) {
+            alignCenterBtn.classList.toggle('active', textAlign === 'center');
+        }
+        
+        const alignRightBtn = safeGetElement('alignRightBtn');
+        if (alignRightBtn) {
+            alignRightBtn.classList.toggle('active', textAlign === 'right');
+        }
+    }
 });
 

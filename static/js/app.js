@@ -22,6 +22,42 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Delete Column button:', document.getElementById('deleteColumnBtn'));
         console.log('Save Sheet button:', document.getElementById('saveSheetBtn'));
     }
+
+    // Get CSRF token from meta tag
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    // Add CSRF token to all forms on page that might not have it
+    document.querySelectorAll('form').forEach(form => {
+        if (!form.querySelector('input[name="csrf_token"]')) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+        }
+    });
+    
+    // If you're using fetch for form submission
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+        // Only add CSRF to non-GET requests
+        if (options.method && options.method !== 'GET') {
+            if (!options.headers) options.headers = {};
+            options.headers['X-CSRFToken'] = csrfToken;
+        }
+        return originalFetch(url, options);
+    };
+    
+    // If using jQuery
+    if (typeof $ !== 'undefined' && typeof $.ajaxSetup === 'function') {
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", csrfToken);
+                }
+            }
+        });
+    }
 });
 
 /**

@@ -86,6 +86,84 @@ function applyFontFamily(fontFamily) {
     showToast(`Font family set to: ${fontFamily.split(',')[0].replace(/['"]/g, '')}`, 'success');
 }
 
+// Function to apply text color to selected cells
+function applyTextColor(color) {
+    console.log('Applying text color:', color);
+    
+    if (!selectedCells || selectedCells.length === 0) {
+        showToast('Please select at least one cell', 'error');
+        return;
+    }
+    
+    selectedCells.forEach(cell => {
+        const editableDiv = cell.querySelector('.editable-cell');
+        if (editableDiv) {
+            editableDiv.style.color = color;
+        }
+    });
+    
+    saveSheetData();
+    showToast('Text color applied', 'success');
+}
+
+// Function to apply background color to selected cells
+function applyBackgroundColor(color) {
+    console.log('Applying background color:', color);
+    
+    if (!selectedCells || selectedCells.length === 0) {
+        showToast('Please select at least one cell', 'error');
+        return;
+    }
+    
+    selectedCells.forEach(cell => {
+        const editableDiv = cell.querySelector('.editable-cell');
+        if (editableDiv) {
+            editableDiv.style.backgroundColor = color;
+        }
+    });
+    
+    saveSheetData();
+    showToast('Background color applied', 'success');
+}
+
+// Function to apply bold formatting to selected cells
+function applyBoldFormatting() {
+    if (!selectedCells || selectedCells.length === 0) {
+        showToast('Please select at least one cell', 'error');
+        return;
+    }
+    
+    selectedCells.forEach(cell => {
+        const editableDiv = cell.querySelector('.editable-cell');
+        if (editableDiv) {
+            const currentWeight = window.getComputedStyle(editableDiv).fontWeight;
+            editableDiv.style.fontWeight = (currentWeight === '700' || currentWeight === 'bold') ? 'normal' : 'bold';
+        }
+    });
+    
+    saveSheetData();
+    showToast('Bold formatting toggled', 'success');
+}
+
+// Function to apply italic formatting to selected cells
+function applyItalicFormatting() {
+    if (!selectedCells || selectedCells.length === 0) {
+        showToast('Please select at least one cell', 'error');
+        return;
+    }
+    
+    selectedCells.forEach(cell => {
+        const editableDiv = cell.querySelector('.editable-cell');
+        if (editableDiv) {
+            const currentStyle = window.getComputedStyle(editableDiv).fontStyle;
+            editableDiv.style.fontStyle = (currentStyle === 'italic') ? 'normal' : 'italic';
+        }
+    });
+    
+    saveSheetData();
+    showToast('Italic formatting toggled', 'success');
+}
+
 // Function to merge selected cells
 function mergeCells() {
     console.log('Merging cells:', selectedCells);
@@ -311,16 +389,81 @@ function clearCellSelection() {
     selectedCells = [];
 }
 
-// Function to update format button states
+// Function to update format button states based on current selection
 function updateFormatButtonStates() {
-    // This would update the active state of formatting buttons
-    // based on the currently selected cell(s)
-    console.log('Updating format button states');
+    if (!selectedCells || selectedCells.length === 0) return;
+    
+    // Get the first selected cell for reference
+    const referenceCell = selectedCells[0].querySelector('.editable-cell');
+    if (!referenceCell) return;
+    
+    const computedStyle = window.getComputedStyle(referenceCell);
+    
+    // Update font size select if it exists
+    const fontSizeSelect = document.getElementById('fontSizeSelect');
+    if (fontSizeSelect) {
+        const fontSize = parseInt(computedStyle.fontSize);
+        // Find the closest option or default to current value
+        const options = Array.from(fontSizeSelect.options).map(opt => parseInt(opt.value));
+        const closestSize = options.reduce((prev, curr) => 
+            Math.abs(curr - fontSize) < Math.abs(prev - fontSize) ? curr : prev, options[0]);
+        fontSizeSelect.value = closestSize;
+    }
+    
+    // Update font family select if it exists
+    const fontFamilySelect = document.getElementById('fontFamilySelect');
+    if (fontFamilySelect) {
+        const fontFamily = computedStyle.fontFamily;
+        // Try to find matching option
+        for (const option of fontFamilySelect.options) {
+            if (fontFamily.includes(option.text)) {
+                fontFamilySelect.value = option.value;
+                break;
+            }
+        }
+    }
+    
+    // Update text alignment buttons
+    const textAlign = computedStyle.textAlign;
+    document.querySelectorAll('#alignLeftBtn, #alignCenterBtn, #alignRightBtn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    if (textAlign === 'left') {
+        document.getElementById('alignLeftBtn')?.classList.add('active');
+    } else if (textAlign === 'center') {
+        document.getElementById('alignCenterBtn')?.classList.add('active');
+    } else if (textAlign === 'right') {
+        document.getElementById('alignRightBtn')?.classList.add('active');
+    }
+    
+    // Update bold button
+    const boldBtn = document.getElementById('boldBtn');
+    if (boldBtn) {
+        if (computedStyle.fontWeight === '700' || computedStyle.fontWeight === 'bold') {
+            boldBtn.classList.add('active');
+        } else {
+            boldBtn.classList.remove('active');
+        }
+    }
+    
+    // Update italic button
+    const italicBtn = document.getElementById('italicBtn');
+    if (italicBtn) {
+        if (computedStyle.fontStyle === 'italic') {
+            italicBtn.classList.add('active');
+        } else {
+            italicBtn.classList.remove('active');
+        }
+    }
 }
 
 // Initialize the buttons when the DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Initializing Excel buttons');
+    
+    // Initialize selectedCells array if it doesn't exist
+    window.selectedCells = window.selectedCells || [];
     
     // Alignment buttons
     const alignLeftBtn = document.getElementById('alignLeftBtn');
@@ -361,26 +504,81 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add row and column buttons
-    const addRowBtn = document.getElementById('addRowBtn');
-    if (addRowBtn) {
-        addRowBtn.addEventListener('click', function() {
-            if (typeof addNewRow === 'function') {
-                addNewRow();
+    // Bold button
+    const boldBtn = document.getElementById('boldBtn');
+    if (boldBtn) {
+        boldBtn.addEventListener('click', function() {
+            applyBoldFormatting();
+        });
+    }
+    
+    // Italic button
+    const italicBtn = document.getElementById('italicBtn');
+    if (italicBtn) {
+        italicBtn.addEventListener('click', function() {
+            applyItalicFormatting();
+        });
+    }
+    
+    // Text color button and picker
+    const textColorBtn = document.getElementById('textColorBtn');
+    const textColorPicker = document.getElementById('textColorPicker');
+    
+    if (textColorBtn) {
+        textColorBtn.addEventListener('click', function() {
+            if (textColorPicker) {
+                textColorPicker.click();
             } else {
-                console.error('addNewRow function not found');
+                // Create color picker if it doesn't exist
+                const picker = document.createElement('input');
+                picker.type = 'color';
+                picker.id = 'textColorPicker';
+                picker.style.display = 'none';
+                document.body.appendChild(picker);
+                
+                picker.addEventListener('input', function() {
+                    applyTextColor(this.value);
+                });
+                
+                picker.click();
             }
         });
     }
     
-    const addColumnBtn = document.getElementById('addColumnBtn');
-    if (addColumnBtn) {
-        addColumnBtn.addEventListener('click', function() {
-            if (typeof addNewColumn === 'function') {
-                addNewColumn();
+    if (textColorPicker) {
+        textColorPicker.addEventListener('input', function() {
+            applyTextColor(this.value);
+        });
+    }
+    
+    // Fill color button and picker
+    const fillColorBtn = document.getElementById('fillColorBtn');
+    const fillColorPicker = document.getElementById('fillColorPicker');
+    
+    if (fillColorBtn) {
+        fillColorBtn.addEventListener('click', function() {
+            if (fillColorPicker) {
+                fillColorPicker.click();
             } else {
-                console.error('addNewColumn function not found');
+                // Create color picker if it doesn't exist
+                const picker = document.createElement('input');
+                picker.type = 'color';
+                picker.id = 'fillColorPicker';
+                picker.style.display = 'none';
+                document.body.appendChild(picker);
+                
+                picker.addEventListener('input', function() {
+                    applyBackgroundColor(this.value);
+                });
+                
+                picker.click();
             }
+        });
+    }
+    
+    if (fillColorPicker) {
+        fillColorPicker.addEventListener('input', function() {
+            applyBackgroundColor(this.value);
         });
     }
     
@@ -403,6 +601,19 @@ document.addEventListener('DOMContentLoaded', function() {
             applyHeaderColor(this.value);
         });
     }
+    
+    // Add row and column buttons
+    const addRowBtn = document.getElementById('addRowBtn');
+    const addColumnBtn = document.getElementById('addColumnBtn');
+    const deleteRowBtn = document.getElementById('deleteRowBtn');
+    const deleteColumnBtn = document.getElementById('deleteColumnBtn');
+    const saveBtn = document.getElementById('saveSheetBtn');
+    
+    if (addRowBtn) addRowBtn.addEventListener('click', addRow);
+    if (addColumnBtn) addColumnBtn.addEventListener('click', addColumn);
+    if (deleteRowBtn) deleteRowBtn.addEventListener('click', deleteSelectedRow);
+    if (deleteColumnBtn) deleteColumnBtn.addEventListener('click', deleteSelectedColumn);
+    if (saveBtn) saveBtn.addEventListener('click', saveSheetData);
     
     // Merge cells button
     const mergeCellsBtn = document.getElementById('mergeCellsBtn');
@@ -428,5 +639,555 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+S to save
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveSheetData();
+        }
+        
+        // Ctrl+I to insert row
+        if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+            e.preventDefault();
+            addRow();
+        }
+        
+        // Ctrl+Shift+I to insert column
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+            e.preventDefault();
+            addColumn();
+        }
+    });
+    
+    // Set up cell selection on sheet cells
+    const setupCellSelectionHandlers = () => {
+        document.querySelectorAll('.sheet-cell').forEach(cell => {
+            cell.addEventListener('click', function(event) {
+                toggleCellSelection(this, false, event);
+            });
+        });
+    };
+    
+    // Run setup after a short delay to ensure DOM is fully loaded
+    setTimeout(setupCellSelectionHandlers, 500);
+    
     console.log('Excel buttons initialized');
 });
+
+/**
+ * Add a new row to the table
+ */
+function addRow() {
+    const table = document.getElementById('sheetTable');
+    if (!table) return;
+    
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    
+    const rows = tbody.querySelectorAll('tr');
+    const lastRowIndex = rows.length > 0 ? parseInt(rows[rows.length - 1].getAttribute('data-row')) : -1;
+    const newRowIndex = lastRowIndex + 1;
+    
+    // Get number of columns from header
+    const headerCells = table.querySelectorAll('thead th');
+    const numColumns = headerCells.length;
+    
+    // Create new row
+    const newRow = document.createElement('tr');
+    newRow.setAttribute('data-row', newRowIndex);
+    
+    // Create cells for the row
+    for (let col = 0; col < numColumns; col++) {
+        const cell = document.createElement('td');
+        cell.className = 'sheet-cell';
+        cell.setAttribute('data-row', newRowIndex);
+        cell.setAttribute('data-col', col);
+        
+        const editableDiv = document.createElement('div');
+        editableDiv.className = 'editable-cell';
+        editableDiv.contentEditable = true;
+        
+        // Add event listeners to make editing work
+        editableDiv.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.focus();
+            
+            // Update selection and formula bar
+            const parentCell = this.closest('.sheet-cell');
+            if (parentCell) {
+                clearSelection();
+                selectCell(parentCell);
+                updateSelectionInfo();
+                
+                const formulaBar = document.getElementById('formulaBar');
+                if (formulaBar) {
+                    formulaBar.value = this.textContent;
+                }
+            }
+        });
+        
+        editableDiv.addEventListener('input', function() {
+            const formulaBar = document.getElementById('formulaBar');
+            if (formulaBar) {
+                formulaBar.value = this.textContent;
+            }
+        });
+        
+        cell.appendChild(editableDiv);
+        
+        // Add cell selection event handler
+        cell.addEventListener('mousedown', function(e) {
+            if (e.target === this) {
+                if (!(e.ctrlKey || e.metaKey)) {
+                    clearSelection();
+                }
+                selectCell(this);
+                updateSelectionInfo();
+            }
+        });
+        
+        newRow.appendChild(cell);
+    }
+    
+    // Append the row
+    tbody.appendChild(newRow);
+    
+    // Show notification
+    showToast('Row added successfully', 'success');
+}
+
+/**
+ * Add a new column to the table
+ */
+function addColumn() {
+    const table = document.getElementById('sheetTable');
+    if (!table) return;
+    
+    // Get header row and all data rows
+    const headerRow = table.querySelector('thead tr');
+    const dataRows = table.querySelectorAll('tbody tr');
+    
+    if (!headerRow) return;
+    
+    const headerCells = headerRow.querySelectorAll('th');
+    const newColumnIndex = headerCells.length;
+    
+    // Create new header cell
+    const newHeaderCell = document.createElement('th');
+    newHeaderCell.className = 'sheet-header';
+    newHeaderCell.setAttribute('data-col', newColumnIndex);
+    newHeaderCell.style.width = '80px';
+    
+    // Create editable div for header
+    const headerEditableDiv = document.createElement('div');
+    headerEditableDiv.className = 'editable-cell';
+    headerEditableDiv.contentEditable = true;
+    
+    // Add event listeners for header editing
+    headerEditableDiv.addEventListener('click', function(e) {
+        e.stopPropagation();
+        this.focus();
+        
+        const parentCell = this.closest('.sheet-header');
+        if (parentCell) {
+            clearSelection();
+            selectCell(parentCell);
+            updateSelectionInfo();
+            
+            const formulaBar = document.getElementById('formulaBar');
+            if (formulaBar) {
+                formulaBar.value = this.textContent;
+            }
+        }
+    });
+    
+    headerEditableDiv.addEventListener('input', function() {
+        const formulaBar = document.getElementById('formulaBar');
+        if (formulaBar) {
+            formulaBar.value = this.textContent;
+        }
+    });
+    
+    newHeaderCell.appendChild(headerEditableDiv);
+    
+    // Add header cell selection handler
+    newHeaderCell.addEventListener('mousedown', function(e) {
+        if (e.target === this) {
+            if (!(e.ctrlKey || e.metaKey)) {
+                clearSelection();
+            }
+            selectCell(this);
+            updateSelectionInfo();
+        }
+    });
+    
+    // Add the header cell
+    headerRow.appendChild(newHeaderCell);
+    
+    // Add new column letter in column headers container
+    const columnHeadersContainer = document.getElementById('columnHeaders');
+    if (columnHeadersContainer) {
+        const colHeader = document.createElement('div');
+        colHeader.className = 'excel-column-header';
+        colHeader.setAttribute('data-col', newColumnIndex);
+        colHeader.textContent = columnIndexToLetter(newColumnIndex);
+        
+        // Create resize handle
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'col-resize-handle';
+        resizeHandle.setAttribute('data-col', newColumnIndex);
+        colHeader.appendChild(resizeHandle);
+        
+        columnHeadersContainer.appendChild(colHeader);
+    }
+    
+    // Add cell to each row
+    dataRows.forEach(row => {
+        const rowIndex = parseInt(row.getAttribute('data-row'));
+        
+        // Create new cell
+        const newCell = document.createElement('td');
+        newCell.className = 'sheet-cell';
+        newCell.setAttribute('data-row', rowIndex);
+        newCell.setAttribute('data-col', newColumnIndex);
+        
+        // Create editable div
+        const editableDiv = document.createElement('div');
+        editableDiv.className = 'editable-cell';
+        editableDiv.contentEditable = true;
+        
+        // Add event listeners
+        editableDiv.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.focus();
+            
+            const parentCell = this.closest('.sheet-cell');
+            if (parentCell) {
+                clearSelection();
+                selectCell(parentCell);
+                updateSelectionInfo();
+                
+                const formulaBar = document.getElementById('formulaBar');
+                if (formulaBar) {
+                    formulaBar.value = this.textContent;
+                }
+            }
+        });
+        
+        editableDiv.addEventListener('input', function() {
+            const formulaBar = document.getElementById('formulaBar');
+            if (formulaBar) {
+                formulaBar.value = this.textContent;
+            }
+        });
+        
+        newCell.appendChild(editableDiv);
+        
+        // Add cell selection
+        newCell.addEventListener('mousedown', function(e) {
+            if (e.target === this) {
+                if (!(e.ctrlKey || e.metaKey)) {
+                    clearSelection();
+                }
+                selectCell(this);
+                updateSelectionInfo();
+            }
+        });
+        
+        row.appendChild(newCell);
+    });
+    
+    // Show notification
+    showToast('Column added successfully', 'success');
+}
+
+/**
+ * Delete selected row(s)
+ */
+function deleteSelectedRow() {
+    if (window.selectedCells.length === 0) {
+        showToast('Please select at least one cell', 'error');
+        return;
+    }
+    
+    // Get all unique row indexes
+    const rowIndices = [...new Set(
+        window.selectedCells.map(cell => 
+            parseInt(cell.getAttribute('data-row'))
+        ).filter(row => !isNaN(row))
+    )].sort((a, b) => b - a); // Sort in descending order to delete from bottom up
+    
+    if (rowIndices.length === 0) {
+        showToast('No valid rows selected', 'error');
+        return;
+    }
+    
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete ${rowIndices.length > 1 ? 'these rows' : 'this row'}?`)) {
+        return;
+    }
+    
+    // Delete rows
+    const table = document.getElementById('sheetTable');
+    const tbody = table.querySelector('tbody');
+    
+    rowIndices.forEach(rowIndex => {
+        const row = tbody.querySelector(`tr[data-row="${rowIndex}"]`);
+        if (row) {
+            row.remove();
+        }
+    });
+    
+    // Renumber remaining rows
+    const remainingRows = tbody.querySelectorAll('tr');
+    remainingRows.forEach((row, index) => {
+        row.setAttribute('data-row', index);
+        
+        // Update row cells
+        row.querySelectorAll('td').forEach(cell => {
+            cell.setAttribute('data-row', index);
+        });
+    });
+    
+    // Clear selection
+    clearSelection();
+    showToast('Row(s) deleted successfully', 'success');
+}
+
+/**
+ * Delete selected column(s)
+ */
+function deleteSelectedColumn() {
+    if (window.selectedCells.length === 0) {
+        showToast('Please select at least one cell', 'error');
+        return;
+    }
+    
+    // Get all unique column indexes
+    const colIndices = [...new Set(
+        window.selectedCells.map(cell => 
+            parseInt(cell.getAttribute('data-col'))
+        ).filter(col => !isNaN(col))
+    )].sort((a, b) => b - a); // Sort in descending order to delete from right to left
+    
+    if (colIndices.length === 0) {
+        showToast('No valid columns selected', 'error');
+        return;
+    }
+    
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete ${colIndices.length > 1 ? 'these columns' : 'this column'}?`)) {
+        return;
+    }
+    
+    const table = document.getElementById('sheetTable');
+    const thead = table.querySelector('thead');
+    const columnHeaders = document.getElementById('columnHeaders');
+    
+    colIndices.forEach(colIndex => {
+        // Remove column header
+        const th = thead.querySelector(`th[data-col="${colIndex}"]`);
+        if (th) th.remove();
+        
+        // Remove column from column headers container
+        if (columnHeaders) {
+            const colHeader = columnHeaders.querySelector(`.excel-column-header[data-col="${colIndex}"]`);
+            if (colHeader) colHeader.remove();
+        }
+        
+        // Remove column cells
+        table.querySelectorAll(`td[data-col="${colIndex}"]`).forEach(cell => {
+            cell.remove();
+        });
+    });
+    
+    // Renumber remaining columns
+    const headCells = thead.querySelectorAll('th');
+    headCells.forEach((cell, index) => {
+        cell.setAttribute('data-col', index);
+    });
+    
+    // Update column header labels
+    if (columnHeaders) {
+        const colHeaders = columnHeaders.querySelectorAll('.excel-column-header');
+        colHeaders.forEach((header, index) => {
+            header.setAttribute('data-col', index);
+            header.textContent = columnIndexToLetter(index);
+            
+            // Update resize handle
+            const resizeHandle = header.querySelector('.col-resize-handle');
+            if (resizeHandle) {
+                resizeHandle.setAttribute('data-col', index);
+            }
+        });
+    }
+    
+    // Update all data cells
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        cells.forEach((cell, index) => {
+            cell.setAttribute('data-col', index);
+        });
+    });
+    
+    // Clear selection
+    clearSelection();
+    showToast('Column(s) deleted successfully', 'success');
+}
+
+/**
+ * Convert column index to letter (A, B, C, ... Z, AA, AB, etc.)
+ */
+function columnIndexToLetter(index) {
+    let letter = '';
+    index++;
+    
+    while (index > 0) {
+        const modulo = (index - 1) % 26;
+        letter = String.fromCharCode(65 + modulo) + letter;
+        index = Math.floor((index - modulo) / 26);
+    }
+    
+    return letter;
+}
+
+/**
+ * Save sheet data
+ */
+function saveSheetData() {
+    const sheetName = document.getElementById('sheetTable').getAttribute('data-sheet-name');
+    const rows = document.querySelectorAll('#sheetTable tbody tr');
+    const headers = document.querySelectorAll('#sheetTable thead th');
+    
+    // Create data array
+    const data = [];
+    
+    // Add headers
+    const headerRow = [];
+    headers.forEach(header => {
+        const editableDiv = header.querySelector('.editable-cell');
+        headerRow.push(editableDiv ? editableDiv.textContent : '');
+    });
+    data.push(headerRow);
+    
+    // Add data rows
+    rows.forEach(row => {
+        const dataRow = [];
+        const cells = row.querySelectorAll('td');
+        cells.forEach(cell => {
+            const editableDiv = cell.querySelector('.editable-cell');
+            dataRow.push(editableDiv ? editableDiv.textContent : '');
+        });
+        data.push(dataRow);
+    });
+    
+    // Send data to server
+    fetch(`/update_sheet/${sheetName}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({ data: data })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Sheet saved successfully', 'success');
+        } else {
+            showToast('Error saving sheet: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error saving sheet', 'error');
+        console.error('Error:', error);
+    });
+}
+
+// Helper functions shared with other scripts
+window.saveSheetData = saveSheetData;
+window.showToast = showToast;
+window.clearSelection = clearSelection;
+window.selectCell = selectCell;
+window.updateSelectionInfo = updateSelectionInfo;
+
+/**
+ * Show toast notification
+ */
+function showToast(message, type = 'info') {
+    const toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast show mb-2`;
+    toast.role = 'alert';
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    const bgClass = type === 'error' ? 'bg-danger' : 
+                  type === 'success' ? 'bg-success' : 'bg-info';
+    
+    toast.innerHTML = `
+        <div class="toast-header ${bgClass} text-white">
+            <strong class="me-auto">Excel Generator</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body bg-light">
+            ${message}
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    toast.querySelector('.btn-close').addEventListener('click', function() {
+        toast.remove();
+    });
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+/**
+ * Select a cell for operations
+ */
+function selectCell(cell) {
+    if (!cell.classList.contains('selected')) {
+        cell.classList.add('selected');
+        if (!window.selectedCells) window.selectedCells = [];
+        window.selectedCells.push(cell);
+    }
+}
+
+/**
+ * Clear all selected cells
+ */
+function clearSelection() {
+    document.querySelectorAll('.selected').forEach(selected => {
+        selected.classList.remove('selected');
+    });
+    window.selectedCells = [];
+}
+
+/**
+ * Update selection info display
+ */
+function updateSelectionInfo() {
+    if (!window.selectedCells || window.selectedCells.length === 0) return;
+    
+    const cell = window.selectedCells[0];
+    const row = cell.getAttribute('data-row');
+    const col = cell.getAttribute('data-col');
+    
+    if (row !== null && col !== null) {
+        const colLetter = columnIndexToLetter(parseInt(col));
+        const cellAddr = `${colLetter}${parseInt(row) + 1}`;
+        const cellReference = document.getElementById('cellReference');
+        const selectedCellInfo = document.getElementById('selectedCellInfo');
+        
+        if (cellReference) cellReference.value = cellAddr;
+        if (selectedCellInfo) selectedCellInfo.textContent = cellAddr;
+    }
+}

@@ -1,0 +1,94 @@
+<!-- Modal structure for Add Sheet with Templates -->
+<div class="modal fade" id="addSheetModal" tabindex="-1" aria-labelledby="addSheetModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addSheetModalLabel">Add New Sheet</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Sheet Creation Form -->
+        <form method="POST" action="{{ url_for('add_sheet') }}" class="add-sheet-form">
+          <!-- Add CSRF token -->
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          
+          <div class="mb-3">
+            <label for="sheet_name" class="form-label">Sheet Name</label>
+            <input type="text" class="form-control" id="sheet_name" name="sheet_name" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Use Template</label>
+            <select class="form-select" id="templateSelect" name="template_id">
+                <option value="">-- Select Template --</option>
+                {% if built_in_templates is defined %}
+                    {% for template in built_in_templates %}
+                        <option value="{{ template.id }}">{{ template.name }}</option>
+                    {% endfor %}
+                {% endif %}
+                
+                {% if custom_templates is defined %}
+                    {% for template in custom_templates %}
+                        <option value="{{ template.id }}">{{ template.name }}</option>
+                    {% endfor %}
+                {% endif %}
+            </select>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Headers (comma separated)</label>
+            <input type="text" class="form-control" id="headersInput" name="headers" placeholder="Column1,Column2,Column3">
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Data</label>
+            <textarea class="form-control" id="dataInput" name="data" rows="6" placeholder="Enter comma-separated values for columns and semicolons for rows"></textarea>
+            <small class="text-muted">Use <b>commas</b> to separate columns, <b>semicolons</b> to separate rows.<br>
+Example: <code>Name,Age,Grade;Alice,20,A;Bob,21,B</code></small>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Sheet</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add template preview functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const templateSelect = document.getElementById('templateSelect');
+    const headersInput = document.getElementById('headersInput');
+    const dataInput = document.getElementById('dataInput');
+    
+    if (templateSelect) {
+        templateSelect.addEventListener('change', function() {
+            // Reset fields if no template is selected
+            if (!this.value) {
+                headersInput.value = '';
+                dataInput.value = '';
+                return;
+            }
+            
+            // Find the selected template
+            const selectedOption = this.options[this.selectedIndex];
+            const templateName = selectedOption.textContent;
+            
+            // Make AJAX request to get template data (if needed)
+            fetch(`/get_template/${encodeURIComponent(this.value)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Populate headers and data inputs
+                        headersInput.value = data.headers || '';
+                        dataInput.value = data.sample_data || '';
+                    }
+                })
+                .catch(error => console.error('Error loading template:', error));
+        });
+    }
+});
+</script>

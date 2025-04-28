@@ -1,51 +1,64 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
         <a class="navbar-brand" href="{{ url_for('index') }}">
-            <i class="bi bi-file-earmark-excel me-2"></i>Excel Generator
+            <i class="bi bi-file-earmark-spreadsheet"></i> Excel Generator
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            {% if current_user.is_authenticated %}
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('index') }}">
-                        <i class="bi bi-house-door"></i> Home
+                        <i class="bi bi-house"></i> Home
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('add_sheet') }}">
+                        <i class="bi bi-plus-square"></i> New Sheet
+                    </a>
+                </li>
+                <!-- Restore the history tab -->
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('view_history') }}">
                         <i class="bi bi-clock-history"></i> History
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link btn btn-success text-white ms-2" href="{{ url_for('download_excel') }}">
-                        <i class="bi bi-download"></i> Download Excel
-                    </a>
-                </li>
-            </ul>
-            <ul class="navbar-nav">
+                <!-- Add the new file history dropdown menu -->
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                       data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-person-circle"></i> {{ current_user.name }}
+                    <a class="nav-link dropdown-toggle" href="#" id="fileHistoryDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-file-earmark-arrow-down"></i> Downloads
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li>
-                            <a class="dropdown-item" href="{{ url_for('profile') }}">
-                                <i class="bi bi-person"></i> Profile
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="{{ url_for('logout') }}">
-                                <i class="bi bi-box-arrow-right"></i> Logout
-                            </a>
-                        </li>
+                    <ul class="dropdown-menu" aria-labelledby="fileHistoryDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('download_history') }}">View All Downloads</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('manage_templates') }}">Manage Templates</a></li>
                     </ul>
                 </li>
             </ul>
-            {% endif %}
+            
+            <ul class="navbar-nav">
+                {% if current_user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="{{ url_for('user_profile') }}">Profile</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('user_settings') }}">Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                </li>
+                {% endif %}
+            </ul>
         </div>
     </div>
 </nav>

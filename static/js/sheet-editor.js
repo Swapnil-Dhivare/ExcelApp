@@ -7,6 +7,9 @@ let columnHeadersContainer = null;
 
 // Initialize on document ready
 document.addEventListener('DOMContentLoaded', function() {
+    // Expose selectedCells to window scope so other scripts can access it
+    window.selectedCells = selectedCells;
+    
     // Make sure buttons are connected to their functions
     document.getElementById('addRowBtn')?.addEventListener('click', addNewRow);
     document.getElementById('addColumnBtn')?.addEventListener('click', addNewColumn);
@@ -125,6 +128,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Restore divided cells
     setTimeout(restoreDividedCells, 500); // Slight delay to ensure table is loaded
+
+    // Initialize color picker buttons
+    initializeColorPickers();
 });
 
 // Font family changing function
@@ -1077,4 +1083,212 @@ function updateColumnAttributes(colIdx) {
         const rowIdx = cell.getAttribute('data-row');
         cell.id = `cell_${rowIdx}_${colIdx}`;
     });
+}
+
+// Function to initialize all color picker buttons
+function initializeColorPickers() {
+    // Cell background color
+    const bgColorBtn = document.getElementById('bgColorBtn');
+    const bgColorPicker = document.getElementById('bgColorPicker');
+    
+    if (bgColorBtn && bgColorPicker) {
+        bgColorBtn.addEventListener('click', function() {
+            bgColorPicker.click();
+        });
+        
+        bgColorPicker.addEventListener('input', function() {
+            applyCellBackgroundColor(this.value);
+        });
+    }
+    
+    // Header background color
+    const headerColorBtn = document.getElementById('headerColorBtn');
+    const headerColorPicker = document.getElementById('headerColorPicker');
+    
+    if (headerColorBtn && headerColorPicker) {
+        headerColorBtn.addEventListener('click', function() {
+            headerColorPicker.click();
+        });
+        
+        headerColorPicker.addEventListener('input', function() {
+            applyHeaderBackgroundColor(this.value);
+        });
+    }
+    
+    // Text color
+    const textColorBtn = document.getElementById('textColorBtn');
+    const textColorPicker = document.getElementById('textColorPicker');
+    
+    if (textColorBtn && textColorPicker) {
+        textColorBtn.addEventListener('click', function() {
+            textColorPicker.click();
+        });
+        
+        textColorPicker.addEventListener('input', function() {
+            applyTextColor(this.value);
+        });
+    }
+    
+    // Row background color
+    const rowColorBtn = document.getElementById('rowColorBtn');
+    const rowColorPicker = document.getElementById('rowColorPicker');
+    
+    if (rowColorBtn && rowColorPicker) {
+        rowColorBtn.addEventListener('click', function() {
+            rowColorPicker.click();
+        });
+        
+        rowColorPicker.addEventListener('input', function() {
+            applyRowBackgroundColor(this.value);
+        });
+    }
+    
+    // Column background color
+    const columnColorBtn = document.getElementById('columnColorBtn');
+    const columnColorPicker = document.getElementById('columnColorPicker');
+    
+    if (columnColorBtn && columnColorPicker) {
+        columnColorBtn.addEventListener('click', function() {
+            columnColorPicker.click();
+        });
+        
+        columnColorPicker.addEventListener('input', function() {
+            applyColumnBackgroundColor(this.value);
+        });
+    }
+}
+
+// Function to apply background color to selected cells
+function applyCellBackgroundColor(color) {
+    if (!selectedCells || selectedCells.length === 0) {
+        showToast('Please select at least one cell', 'error');
+        return;
+    }
+    
+    selectedCells.forEach(cell => {
+        const editableDiv = cell.querySelector('.editable-cell');
+        if (editableDiv) {
+            editableDiv.style.backgroundColor = color;
+        }
+    });
+    
+    saveSheetData();
+    showToast('Background color applied', 'success');
+}
+
+// Function to apply header background color
+function applyHeaderBackgroundColor(color) {
+    // Get all selected header cells or apply to all headers if none selected
+    let headerCells = selectedCells.filter(cell => 
+        cell.tagName === 'TH' || cell.classList.contains('sheet-header')
+    );
+    
+    // If no headers are selected, show error
+    if (headerCells.length === 0) {
+        showToast('Please select at least one header cell', 'error');
+        return;
+    }
+    
+    // Apply color to selected headers
+    headerCells.forEach(cell => {
+        const editableDiv = cell.querySelector('.editable-cell');
+        if (editableDiv) {
+            editableDiv.style.backgroundColor = color;
+        }
+    });
+    
+    saveSheetData();
+    showToast(`Applied color to ${headerCells.length} header(s)`, 'success');
+}
+
+// Function to apply text color to selected cells
+function applyTextColor(color) {
+    if (!selectedCells || selectedCells.length === 0) {
+        showToast('Please select at least one cell', 'error');
+        return;
+    }
+    
+    selectedCells.forEach(cell => {
+        const editableDiv = cell.querySelector('.editable-cell');
+        if (editableDiv) {
+            editableDiv.style.color = color;
+        }
+    });
+    
+    saveSheetData();
+    showToast('Text color applied', 'success');
+}
+
+// Function to apply background color to an entire row
+function applyRowBackgroundColor(color) {
+    if (!selectedCells || selectedCells.length === 0) {
+        showToast('Please select a cell in the row', 'error');
+        return;
+    }
+    
+    // Get unique row indices from selected cells
+    const rowIndices = [...new Set(
+        selectedCells.map(cell => parseInt(cell.getAttribute('data-row')))
+    )];
+    
+    if (rowIndices.length === 0) {
+        showToast('Could not identify row', 'error');
+        return;
+    }
+    
+    // Apply color to all cells in each selected row
+    rowIndices.forEach(rowIndex => {
+        const rowCells = document.querySelectorAll(`td[data-row="${rowIndex}"]`);
+        rowCells.forEach(cell => {
+            const editableDiv = cell.querySelector('.editable-cell');
+            if (editableDiv) {
+                editableDiv.style.backgroundColor = color;
+            }
+        });
+    });
+    
+    saveSheetData();
+    showToast(`Applied color to ${rowIndices.length} row(s)`, 'success');
+}
+
+// Function to apply background color to an entire column
+function applyColumnBackgroundColor(color) {
+    if (!selectedCells || selectedCells.length === 0) {
+        showToast('Please select a cell in the column', 'error');
+        return;
+    }
+    
+    // Get unique column indices from selected cells
+    const colIndices = [...new Set(
+        selectedCells.map(cell => parseInt(cell.getAttribute('data-col')))
+    )];
+    
+    if (colIndices.length === 0) {
+        showToast('Could not identify column', 'error');
+        return;
+    }
+    
+    // Apply color to all cells in each selected column
+    colIndices.forEach(colIndex => {
+        // Apply to header
+        const headerCell = document.querySelector(`th[data-col="${colIndex}"]`);
+        if (headerCell) {
+            const editableDiv = headerCell.querySelector('.editable-cell');
+            if (editableDiv) {
+                editableDiv.style.backgroundColor = color;
+            }
+        }
+        
+        // Apply to data cells
+        const colCells = document.querySelectorAll(`td[data-col="${colIndex}"]`);
+        colCells.forEach(cell => {
+            const editableDiv = cell.querySelector('.editable-cell');
+            if (editableDiv) {
+                editableDiv.style.backgroundColor = color;
+            }
+        });
+    });
+    
+    saveSheetData();
+    showToast(`Applied color to ${colIndices.length} column(s)`, 'success');
 }

@@ -81,6 +81,8 @@
 
 .table-responsive {
     max-height: calc(70vh - 120px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Responsive adjustments */
@@ -366,10 +368,28 @@ pre {
     top: 1rem;
     z-index: 100;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    animation: fadeIn 0.3s;
 }
 
 .formatting-panel.visible {
     display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Add hover effects to formatting buttons */
+.formatting-panel .btn:hover {
+    background-color: #e9ecef;
+    z-index: 1;
+}
+
+/* Active state for formatting buttons */
+.formatting-panel .btn.active {
+    background-color: #6c757d;
+    color: white;
 }
 
 /* Merged Cell Styling */
@@ -847,4 +867,118 @@ pre {
 input[type="color"] {
     width: 100px;
     height: 30px;
+}
+
+/* Enhanced color picker buttons */
+.btn-outline-warning[id="headerColorBtn"] {
+    position: relative;
+}
+
+.btn-outline-info[id="bgColorBtn"] {
+    position: relative;
+}
+
+.btn-outline-secondary[id="textColorBtn"] {
+    position: relative;
+}
+
+.btn-outline-primary[id="rowColorBtn"], 
+.btn-outline-primary[id="columnColorBtn"] {
+    position: relative;
+}
+
+/* Color indicator for buttons */
+.color-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    margin-left: 3px;
+    vertical-align: middle;
+}
+
+/* Provide better feedback on selection */
+.sheet-cell.selected,
+.sheet-header.selected {
+    outline: 2px solid #0d6efd !important;
+    position: relative;
+    z-index: 5;
+    box-shadow: 0 0 5px rgba(13, 110, 253, 0.3);
+}
+
+/* Multiple selection indication */
+.selection-count {
+    position: fixed;
+    background-color: rgba(13, 110, 253, 0.9);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Improve header selection visibility */
+th.sheet-header.selected {
+    outline: 2px solid #0d6efd !important;
+    position: relative;
+    z-index: 5;
+    box-shadow: 0 0 5px rgba(13, 110, 253, 0.3);
+}
+
+th.sheet-header.selected .editable-cell {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Better color indicators on buttons */
+.color-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1px solid rgba(0,0,0,0.2);
+    border-radius: 2px;
+    margin-left: 3px;
+    vertical-align: middle;
+}
+
+/* Style the color pickers */
+input[type="color"] {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Make sure selected cells stand out */
+.sheet-cell.selected,
+.sheet-header.selected {
+    outline: 2px solid #0d6efd !important;
+    position: relative;
+    z-index: 5;
+}
+
+/* Additional styles for proper scrolling */
+.index-page {
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+.container {
+    padding-bottom: 2rem; /* Add some bottom padding for better visual appearance */
+}
+
+/* Fix footer positioning */
+.footer {
+    position: relative; /* Not fixed, so it follows content */
+    width: 100%;
+}
+
+/* Fix for very tall content */
+@media (max-height: 600px) {
+    .container {
+        padding-bottom: 4rem;
+    }
 }
